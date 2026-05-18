@@ -1,11 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '../../utils/supabase/client'
 
+// Zewnętrzny komponent strony — opakowuje formularz w Suspense,
+// bo useSearchParams wymaga tego przy produkcyjnym buildzie Next.js.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginInner />
+    </Suspense>
+  )
+}
+
+function LoginFallback() {
+  return (
+    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
+      <div className="text-gray-400 text-sm">Ładowanie…</div>
+    </div>
+  )
+}
+
+function LoginInner() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -13,10 +31,6 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Bezpieczne odczytanie ?next= z URL-a.
-  // Dopuszczamy tylko ścieżki względne (zaczynające się od "/"), żeby user
-  // złośliwym linkiem typu /login?next=https://phishing.com nie mógł nas
-  // przekierować na zewnętrzną stronę po zalogowaniu.
   const rawNext = searchParams.get('next')
   const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null
 
