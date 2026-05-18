@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '../../utils/supabase/server'
 import ProfileForm from './profile-form'
@@ -31,7 +32,13 @@ export default async function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-[400px]">
-        <h1 className="text-2xl font-bold mb-6 text-center">Profil</h1>
+        <Link
+  href="/"
+  className="text-sm text-gray-400 hover:text-white mb-4 inline-block"
+>
+  ← Wróć na stronę główną
+</Link>
+<h1 className="text-2xl font-bold mb-6 text-center">Profil</h1>
 
         <div className="bg-gray-800 rounded-lg p-6 mb-6 flex flex-col gap-3">
           <p>
