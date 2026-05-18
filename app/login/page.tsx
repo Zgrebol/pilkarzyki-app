@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '../../utils/supabase/client'
 
@@ -11,6 +11,14 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Bezpieczne odczytanie ?next= z URL-a.
+  // Dopuszczamy tylko ścieżki względne (zaczynające się od "/"), żeby user
+  // złośliwym linkiem typu /login?next=https://phishing.com nie mógł nas
+  // przekierować na zewnętrzną stronę po zalogowaniu.
+  const rawNext = searchParams.get('next')
+  const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -26,13 +34,20 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/profile')
+    router.push(next ?? '/profile')
   }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
       <div className="w-full max-w-[400px]">
         <h1 className="text-2xl font-bold mb-6 text-center">Logowanie</h1>
+
+        {next && (
+          <div className="bg-blue-900/30 border border-blue-700/50 rounded p-3 mb-4 text-sm text-blue-200">
+            Zaloguj się, żeby kontynuować →
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="email">Email</label>
@@ -69,7 +84,10 @@ export default function LoginPage() {
         </form>
         <p className="text-center mt-4 text-gray-400">
           Nie masz konta?{' '}
-          <Link href="/signup" className="text-blue-400 hover:underline">
+          <Link
+            href={next ? `/signup?next=${encodeURIComponent(next)}` : '/signup'}
+            className="text-blue-400 hover:underline"
+          >
             Zarejestruj się
           </Link>
         </p>

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import PendingMembersPanel from './pending-members-panel'
 import Link from 'next/link'
 import { createClient } from '../../../utils/supabase/server'
 
@@ -23,7 +24,7 @@ export default async function LeaguePage({ params }: Props) {
     notFound()
   }
 
-  // Pobierz członków ligi razem z profilami (display_name)
+  // Pobierz członków ligi (active) razem z profilami (display_name)
   const { data: members } = await supabase
     .from('league_members')
     .select('role, status, team_name, joined_at, profiles(display_name)')
@@ -31,26 +32,19 @@ export default async function LeaguePage({ params }: Props) {
     .eq('status', 'active')
     .order('joined_at', { ascending: true })
 
-  // Czy obecny user jest członkiem tej ligi?
-  const myMembership = members?.find((m: any) => {
-    // members nie zawiera user_id — sprawdzamy osobno
-    return false
-  })
-
-  // Powyższe nie zadziała bo nie pobraliśmy user_id. Robimy drugie zapytanie:
-  let myRole: string | null = null
+  // Moja membership w tej lidze (active LUB pending — żeby wiedzieć, czy czekam)
+  let myMembership: { role: string; status: string } | null = null
   if (user) {
-    const { data: me } = await supabase
+    const { data } = await supabase
       .from('league_members')
-      .select('role')
+      .select('role, status')
       .eq('league_id', id)
       .eq('user_id', user.id)
-      .eq('status', 'active')
       .maybeSingle()
-    myRole = me?.role ?? null
+    myMembership = data
   }
 
-// Czy zalogowany user to super admin? (do banerki "wchodzisz jako platforma")
+  // Czy zalogowany user to super admin?
   let isSuperAdmin = false
   if (user) {
     const { data: profile } = await supabase
@@ -61,14 +55,59 @@ export default async function LeaguePage({ params }: Props) {
     isSuperAdmin = profile?.is_super_admin ?? false
   }
 
+  // Pobierz pending zgłoszenia — tylko jeśli zalogowany user może je moderować.
+  // Sprawdzamy uprawnienia ZANIM zrobimy zapytanie do bazy, żeby zwykli userzy
+  // nie widzieli pendingów innych przez DevTools / cache.
+  const canModerate = isSuperAdmin ||
+    myMembership?.status === 'active' &&
+    (myMembership.role === 'admin' || myMembership.role === 'mod')
+
+  let pendingMembers: Array<{
+    id: string
+    team_name: string | null
+    joined_at: string
+    display_name: string
+  }> = []
+
+  if (canModerate) {
+    const { data: pendingRaw } = await supabase
+      .from('league_members')
+      .select('id, team_name, joined_at, profiles(display_name)')
+      .eq('league_id', id)
+      .eq('status', 'pending')
+      .order('joined_at', { ascending: true })
+
+    pendingMembers = (pendingRaw ?? []).map((m: any) => ({
+      id: m.id,
+      team_name: m.team_name,
+      joined_at: m.joined_at,
+      display_name: m.profiles?.display_name ?? '(usunięty profil)',
+    }))
+  }
 
   const createdDate = new Date(league.created_at).toLocaleDateString('pl-PL')
   const memberCount = members?.length ?? 0
+  const spotsLeft = league.max_teams - memberCount
+  const isFull = spotsLeft <= 0
 
   function roleBadge(role: string) {
     if (role === 'admin') return { label: '👑 admin', cls: 'bg-yellow-600' }
     if (role === 'mod') return { label: '🛡️ mod', cls: 'bg-blue-600' }
     return { label: '⚽ gracz', cls: 'bg-gray-700' }
+  }
+
+  // Decyzja: jaki call-to-action pokazać?
+  // Tylko dla publicznych lig (do prywatnych dołącza się przez zaproszenie).
+  let actionPanel: 'guest_join' | 'logged_join' | 'pending' | null = null
+
+  if (league.is_public && !myMembership) {
+    if (!user) {
+      actionPanel = 'guest_join'
+    } else {
+      actionPanel = 'logged_join'
+    }
+  } else if (myMembership?.status === 'pending') {
+    actionPanel = 'pending'
   }
 
   return (
@@ -101,20 +140,89 @@ export default async function LeaguePage({ params }: Props) {
             <span>Utworzono: <span className="text-white">{createdDate}</span></span>
           </div>
 
-          {myRole ? (
+          {myMembership?.status === 'active' ? (
             <div className="mt-4 pt-4 border-t border-gray-700 text-sm">
               <span className="text-gray-400">Twoja rola w lidze: </span>
-              <span className={`text-xs rounded px-2 py-1 ${roleBadge(myRole).cls}`}>
-                {roleBadge(myRole).label}
+              <span className={`text-xs rounded px-2 py-1 ${roleBadge(myMembership.role).cls}`}>
+                {roleBadge(myMembership.role).label}
               </span>
             </div>
-          ) : isSuperAdmin ? (
+          ) : isSuperAdmin && !myMembership ? (
             <div className="mt-4 pt-4 border-t border-yellow-700/50 text-sm bg-yellow-900/20 -mx-6 -mb-6 px-6 py-3 rounded-b-lg">
               🛡️ <span className="text-yellow-400">Wchodzisz jako super admin platformy.</span>
               <span className="text-gray-400"> Nie jesteś członkiem tej ligi.</span>
             </div>
           ) : null}
         </div>
+
+        {/* Panel akcji: dołącz / zaloguj / pending */}
+        {actionPanel && (
+          <div className="bg-gray-800 rounded-lg p-6 mb-6">
+            {actionPanel === 'guest_join' && (
+              isFull ? (
+                <div className="text-center">
+                  <p className="text-gray-400 mb-2">🔒 Brak wolnych miejsc</p>
+                  <p className="text-xs text-gray-500">
+                    Limit zespołów ({league.max_teams}) został osiągnięty.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm text-gray-400 mb-3">
+                    Chcesz dołączyć do tej ligi? Wolnych miejsc: <span className="text-white">{spotsLeft}</span>
+                  </p>
+                  <Link
+                    href={`/login?next=${encodeURIComponent(`/leagues/${id}`)}`}
+                    className="inline-block bg-blue-600 hover:bg-blue-700 text-white rounded px-5 py-2"
+                  >
+                    Zaloguj się, żeby dołączyć
+                  </Link>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Nie masz konta?{' '}
+                    <Link
+                      href={`/signup?next=${encodeURIComponent(`/leagues/${id}`)}`}
+                      className="text-blue-400 hover:underline"
+                    >
+                      Zarejestruj się
+                    </Link>
+                  </p>
+                </div>
+              )
+            )}
+
+            {actionPanel === 'logged_join' && (
+              isFull ? (
+                <div className="text-center">
+                  <p className="text-gray-400 mb-2">🔒 Brak wolnych miejsc</p>
+                  <p className="text-xs text-gray-500">
+                    Limit zespołów ({league.max_teams}) został osiągnięty.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm text-gray-400 mb-3">
+                    Wolnych miejsc: <span className="text-white">{spotsLeft}</span>
+                  </p>
+                  <Link
+                    href={`/leagues/${id}/join`}
+                    className="inline-block bg-green-600 hover:bg-green-700 text-white rounded px-5 py-2"
+                  >
+                    Dołącz do ligi
+                  </Link>
+                </div>
+              )
+            )}
+
+            {actionPanel === 'pending' && (
+              <div className="text-center">
+                <p className="text-yellow-400 mb-1">⏳ Czekasz na akceptację</p>
+                <p className="text-sm text-gray-400">
+                  Twoje zgłoszenie do tej ligi jest oczekujące. Moderator wkrótce się tym zajmie.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Lista członków */}
         <section>
@@ -147,6 +255,23 @@ export default async function LeaguePage({ params }: Props) {
             </div>
           )}
         </section>
+        {/* Panel moderatora — pending zgłoszenia */}
+        {canModerate && (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              ⏳ Oczekujące zgłoszenia
+              {pendingMembers.length > 0 && (
+                <span className="bg-yellow-600 text-xs rounded px-2 py-0.5">
+                  {pendingMembers.length}
+                </span>
+              )}
+            </h2>
+            <PendingMembersPanel
+              leagueId={id}
+              pendingMembers={pendingMembers}
+            />
+          </section>
+        )}
 
       </div>
     </div>
