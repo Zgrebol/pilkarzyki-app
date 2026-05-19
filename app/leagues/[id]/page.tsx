@@ -1,3 +1,4 @@
+import LeaveLeagueButton from './leave-league-button'
 import { notFound } from 'next/navigation'
 import PendingMembersPanel from './pending-members-panel'
 import Link from 'next/link'
@@ -96,11 +97,13 @@ export default async function LeaguePage({ params }: Props) {
     return { label: '⚽ gracz', cls: 'bg-gray-700' }
   }
 
-  // Decyzja: jaki call-to-action pokazać?
-  // Tylko dla publicznych lig (do prywatnych dołącza się przez zaproszenie).
-  let actionPanel: 'guest_join' | 'logged_join' | 'pending' | null = null
+// Decyzja: jaki call-to-action pokazać?
+  let actionPanel: 'guest_join' | 'logged_join' | 'pending' | 'left' | null = null
 
-  if (league.is_public && !myMembership) {
+  if (myMembership?.status === 'left') {
+    // Left user widzi info "Opuściłeś tę ligę" niezależnie od typu ligi
+    actionPanel = 'left'
+  } else if (league.is_public && !myMembership) {
     if (!user) {
       actionPanel = 'guest_join'
     } else {
@@ -140,12 +143,15 @@ export default async function LeaguePage({ params }: Props) {
             <span>Utworzono: <span className="text-white">{createdDate}</span></span>
           </div>
 
-          {myMembership?.status === 'active' ? (
-            <div className="mt-4 pt-4 border-t border-gray-700 text-sm">
-              <span className="text-gray-400">Twoja rola w lidze: </span>
-              <span className={`text-xs rounded px-2 py-1 ${roleBadge(myMembership.role).cls}`}>
-                {roleBadge(myMembership.role).label}
-              </span>
+        {myMembership?.status === 'active' ? (
+            <div className="mt-4 pt-4 border-t border-gray-700 text-sm flex justify-between items-center flex-wrap gap-3">
+              <div>
+                <span className="text-gray-400">Twoja rola w lidze: </span>
+                <span className={`text-xs rounded px-2 py-1 ${roleBadge(myMembership.role).cls}`}>
+                  {roleBadge(myMembership.role).label}
+                </span>
+              </div>
+              <LeaveLeagueButton leagueId={id} mode="active" />
             </div>
           ) : isSuperAdmin && !myMembership ? (
             <div className="mt-4 pt-4 border-t border-yellow-700/50 text-sm bg-yellow-900/20 -mx-6 -mb-6 px-6 py-3 rounded-b-lg">
@@ -213,11 +219,23 @@ export default async function LeaguePage({ params }: Props) {
               )
             )}
 
-            {actionPanel === 'pending' && (
+       {actionPanel === 'pending' && (
               <div className="text-center">
                 <p className="text-yellow-400 mb-1">⏳ Czekasz na akceptację</p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-400 mb-4">
                   Twoje zgłoszenie do tej ligi jest oczekujące. Moderator wkrótce się tym zajmie.
+                </p>
+                <div className="flex justify-center">
+                  <LeaveLeagueButton leagueId={id} mode="pending" />
+                </div>
+              </div>
+            )}
+
+            {actionPanel === 'left' && (
+              <div className="text-center">
+                <p className="text-gray-400 mb-1">👋 Opuściłeś tę ligę</p>
+                <p className="text-sm text-gray-500">
+                  Żeby wrócić, admin ligi musi cię zaprosić ponownie.
                 </p>
               </div>
             )}
