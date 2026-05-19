@@ -125,12 +125,22 @@ export default async function LeaguePage({ params }: Props) {
         </Link>
 
         {/* Header ligi */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+       <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
             <h1 className="text-3xl font-bold">{league.name}</h1>
-            <span className={`text-xs rounded px-2 py-1 ${league.is_public ? 'bg-green-700' : 'bg-gray-700'}`}>
-              {league.is_public ? '🌍 publiczna' : '🔒 prywatna'}
-            </span>
+            <div className="flex items-center gap-2">
+              {(isSuperAdmin || (myMembership?.role === 'admin' && myMembership?.status === 'active')) && (
+                <Link
+                  href={`/leagues/${id}/edit`}
+                  className="text-xs bg-blue-600 hover:bg-blue-700 rounded px-3 py-1"
+                >
+                  ✏️ Edytuj
+                </Link>
+              )}
+              <span className={`text-xs rounded px-2 py-1 ${league.is_public ? 'bg-green-700' : 'bg-gray-700'}`}>
+                {league.is_public ? '🌍 publiczna' : '🔒 prywatna'}
+              </span>
+            </div>
           </div>
 
           {league.description && (
