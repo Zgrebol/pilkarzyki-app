@@ -17,13 +17,13 @@ export default async function EditLeaguePage({ params }: Props) {
   }
 
   // Pobierz ligę — RLS odsieje wiersz, jeśli user nie powinien jej widzieć
-  const { data: league } = await supabase
+  const { data: league, error: leagueError } = await supabase
     .from('leagues')
     .select('id, name, description, season_name, max_teams, is_public')
     .eq('id', id)
     .maybeSingle()
 
-  if (!league) {
+  if (leagueError || !league) {
     notFound()
   }
 

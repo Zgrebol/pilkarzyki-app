@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"app\\\\leagues\\\\*\" -Recurse -Filter \"page.tsx\" -o Name)",
+      "Bash(Select-Object -First 30)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\sebap\\\\projekty\\\\pilkarzyki\\\\app\" -Name -File | Where-Object { $_ -match 'middleware|env' })",
+      "Bash(Get-ChildItem \"c:\\\\Users\\\\sebap\\\\projekty\\\\pilkarzyki\\\\app\" -Depth 2)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\sebap\\\\projekty\\\\pilkarzyki\\\\app\" -Depth 3 | Where-Object { $_.Name -notmatch \"node_modules|\\\\.next|\\\\.git\" } | Select-Object FullName, PSIsContainer | Format-Table -AutoSize)"
+    ]
+  }
+}
