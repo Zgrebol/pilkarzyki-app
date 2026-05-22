@@ -1,3 +1,5 @@
+import DeleteLeagueButton from './delete-league-button'
+import RestoreLeagueButton from './restore-league-button'
 import MemberRoleControls from './member-role-controls'
 import LeaveLeagueButton from './leave-league-button'
 import { notFound } from 'next/navigation'
@@ -17,14 +19,34 @@ export default async function LeaguePage({ params }: Props) {
   // Pobierz ligę
   const { data: league, error: leagueError } = await supabase
     .from('leagues')
-    .select('id, name, description, season_name, max_teams, is_public, created_at')
+    .select('id, name, description, season_name, max_teams, is_public, created_at, status')
     .eq('id', id)
     .maybeSingle()
 
   // Jeśli ligi nie ma w bazie LUB RLS jej nie wpuścił (prywatna, user nie członek)
   if (leagueError || !league) {
     notFound()
+    
   }
+
+  // Czy zalogowany user to super admin? (liczone wcześnie — potrzebne do decyzji o 404)
+  let isSuperAdmin = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_super_admin')
+      .eq('id', user.id)
+      .single()
+    isSuperAdmin = profile?.is_super_admin ?? false
+  }
+
+  // Liga usunięta (soft delete): 404 dla wszystkich poza super adminem.
+  // Super admin widzi usuniętą ligę, żeby móc ją przywrócić.
+  const isDeleted = league.status === 'deleted'
+  if (isDeleted && !isSuperAdmin) {
+    notFound()
+  }
+
 
    // Pobierz członków ligi (active) razem z profilami (display_name)
   const { data: members } = await supabase
@@ -46,16 +68,6 @@ export default async function LeaguePage({ params }: Props) {
     myMembership = data
   }
 
-  // Czy zalogowany user to super admin?
-  let isSuperAdmin = false
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_super_admin')
-      .eq('id', user.id)
-      .single()
-    isSuperAdmin = profile?.is_super_admin ?? false
-  }
 
   // Pobierz pending zgłoszenia — tylko jeśli zalogowany user może je moderować.
   // Sprawdzamy uprawnienia ZANIM zrobimy zapytanie do bazy, żeby zwykli userzy
@@ -119,7 +131,16 @@ export default async function LeaguePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+     <div className="max-w-3xl mx-auto px-4 py-8">
+
+        {isDeleted && (
+          <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
+            <span className="text-sm text-red-200">
+              🗑️ Ta liga jest usunięta. Widzisz ją jako super admin.
+            </span>
+            <RestoreLeagueButton leagueId={id} />
+          </div>
+        )}
 
         <Link
           href="/"
@@ -140,6 +161,9 @@ export default async function LeaguePage({ params }: Props) {
                 >
                   ✏️ Edytuj
                 </Link>
+              )}
+              {isSuperAdmin && !isDeleted && (
+                <DeleteLeagueButton leagueId={id} leagueName={league.name} />
               )}
               <span className={`text-xs rounded px-2 py-1 ${league.is_public ? 'bg-green-700' : 'bg-gray-700'}`}>
                 {league.is_public ? '🌍 publiczna' : '🔒 prywatna'}

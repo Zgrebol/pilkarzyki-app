@@ -8,12 +8,13 @@ export default async function Home() {
   // Ligi usera (tylko jeśli zalogowany)
   let myLeagues: { id: string; name: string; description: string | null; season_name: string | null; role: string }[] = []
 
-  if (user) {
+   if (user) {
     const { data } = await supabase
       .from('league_members')
-      .select('role, leagues(id, name, description, season_name)')
+      .select('role, leagues(id, name, description, season_name, status)')
       .eq('user_id', user.id)
       .eq('status', 'active')
+      .eq('leagues.status', 'active')
 
     myLeagues = (data ?? []).flatMap((m: any) =>
       m.leagues ? [{ ...m.leagues, role: m.role }] : []
@@ -25,6 +26,7 @@ export default async function Home() {
     .from('leagues')
     .select('id, name, description, season_name, max_teams')
     .eq('is_public', true)
+    .eq('status', 'active')
     .order('created_at', { ascending: false })
 
   const myLeagueIds = new Set(myLeagues.map(l => l.id))
