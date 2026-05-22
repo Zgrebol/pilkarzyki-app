@@ -47,8 +47,8 @@ function LoginInner() {
       setError('Nieprawidłowy email lub hasło')
       return
     }
-
-    router.push(next ?? '/profile')
+   router.refresh()
+   router.push(next ?? '/profile')
   }
 
   return (
