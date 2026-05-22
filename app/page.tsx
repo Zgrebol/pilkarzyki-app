@@ -30,12 +30,6 @@ export default async function Home() {
   const myLeagueIds = new Set(myLeagues.map(l => l.id))
   const otherPublicLeagues = (publicLeagues ?? []).filter(l => !myLeagueIds.has(l.id))
 
-  async function handleSignOut() {
-    'use server'
-    const supabase = await createClient()
-    await supabase.auth.signOut()
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-4xl mx-auto px-4 py-12">
@@ -46,31 +40,16 @@ export default async function Home() {
           <p className="text-lg text-gray-400">Platforma fantasy ligi piłkarskiej</p>
         </div>
 
-        {/* Pasek logowania / profilu */}
+        {/* Pasek akcji */}
         <div className="flex justify-center mb-12">
           {user ? (
-            <div className="flex gap-3 items-center flex-wrap justify-center">
-              <span className="text-sm text-gray-400">Zalogowany jako {user.email}</span>
-              <Link
-                href="/profile"
-                className="bg-gray-700 hover:bg-gray-600 text-white text-sm rounded px-4 py-2"
-              >
-                Profil
-              </Link>
+            <div className="flex gap-3 items-center justify-center">
               <Link
                 href="/leagues/new"
                 className="bg-green-600 hover:bg-green-700 text-white text-sm rounded px-4 py-2"
               >
                 + Stwórz ligę
               </Link>
-              <form action={handleSignOut}>
-                <button
-                  type="submit"
-                  className="bg-red-600 hover:bg-red-700 text-white text-sm rounded px-4 py-2"
-                >
-                  Wyloguj
-                </button>
-              </form>
             </div>
           ) : (
             <div className="flex gap-3">

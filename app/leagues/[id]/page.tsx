@@ -1,3 +1,4 @@
+import MemberRoleControls from './member-role-controls'
 import LeaveLeagueButton from './leave-league-button'
 import { notFound } from 'next/navigation'
 import PendingMembersPanel from './pending-members-panel'
@@ -25,10 +26,10 @@ export default async function LeaguePage({ params }: Props) {
     notFound()
   }
 
-  // Pobierz członków ligi (active) razem z profilami (display_name)
+   // Pobierz członków ligi (active) razem z profilami (display_name)
   const { data: members } = await supabase
     .from('league_members')
-    .select('role, status, team_name, joined_at, profiles(display_name)')
+    .select('id, user_id, role, status, team_name, joined_at, profiles(display_name)')
     .eq('league_id', id)
     .eq('status', 'active')
     .order('joined_at', { ascending: true })
@@ -62,6 +63,9 @@ export default async function LeaguePage({ params }: Props) {
   const canModerate = isSuperAdmin ||
     myMembership?.status === 'active' &&
     (myMembership.role === 'admin' || myMembership.role === 'mod')
+// Kto może zmieniać role (do UI). Bramka i tak jest w akcji — to tylko widoczność.
+  const iAmLeagueAdmin = myMembership?.status === 'active' && myMembership.role === 'admin'
+  const canManageRoles = iAmLeagueAdmin || isSuperAdmin
 
   let pendingMembers: Array<{
     id: string
@@ -266,17 +270,29 @@ export default async function LeaguePage({ params }: Props) {
               {members!.map((member: any, idx: number) => {
                 const badge = roleBadge(member.role)
                 const name = member.profiles?.display_name ?? '(usunięty profil)'
+                const isMe = member.user_id === user?.id
+                const showControls = canManageRoles && !isMe
                 return (
-                  <div key={idx} className="flex justify-between items-center px-5 py-3">
-                    <div>
-                      <p className="font-medium">{name}</p>
+                  <div key={idx} className="flex justify-between items-center px-5 py-3 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium">{name}{isMe && <span className="text-xs text-gray-500"> (Ty)</span>}</p>
                       {member.team_name && (
                         <p className="text-sm text-gray-400">Zespół: {member.team_name}</p>
                       )}
                     </div>
-                    <span className={`text-xs rounded px-2 py-1 ${badge.cls}`}>
-                      {badge.label}
-                    </span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className={`text-xs rounded px-2 py-1 ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                      {showControls && (
+                        <MemberRoleControls
+                          leagueId={id}
+                          memberId={member.id}
+                          currentRole={member.role}
+                          viewerIsSuperAdmin={isSuperAdmin}
+                        />
+                      )}
+                    </div>
                   </div>
                 )
               })}
