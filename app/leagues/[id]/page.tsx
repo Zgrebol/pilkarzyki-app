@@ -56,6 +56,15 @@ export default async function LeaguePage({ params }: Props) {
     .eq('status', 'active')
     .order('joined_at', { ascending: true })
 
+  const { data: teamsData } = await supabase
+    .from('teams')
+    .select('owner_id, name')
+    .eq('league_id', id)
+
+  const teamByOwner = new Map<string, string>(
+    (teamsData ?? []).map((t: any) => [t.owner_id, t.name])
+  )
+
   // Moja membership w tej lidze (active LUB pending — żeby wiedzieć, czy czekam)
   let myMembership: { role: string; status: string } | null = null
   if (user) {
@@ -294,15 +303,17 @@ export default async function LeaguePage({ params }: Props) {
               {members!.map((member: any, idx: number) => {
                 const badge = roleBadge(member.role)
                 const name = member.profiles?.display_name ?? '(usunięty profil)'
+                const teamName = teamByOwner.get(member.user_id)
                 const isMe = member.user_id === user?.id
                 const showControls = canManageRoles && !isMe
                 return (
                   <div key={idx} className="flex justify-between items-center px-5 py-3 gap-3">
                     <div className="min-w-0">
                       <p className="font-medium">{name}{isMe && <span className="text-xs text-gray-500"> (Ty)</span>}</p>
-                      {member.team_name && (
-                        <p className="text-sm text-gray-400">Zespół: {member.team_name}</p>
-                      )}
+                      {teamName
+                        ? <p className="text-sm text-gray-400">Zespół: {teamName}</p>
+                        : <p className="text-sm text-gray-500 italic">Brak drużyny</p>
+                      }
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className={`text-xs rounded px-2 py-1 ${badge.cls}`}>
