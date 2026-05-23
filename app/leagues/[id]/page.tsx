@@ -1,3 +1,5 @@
+import CloseRegistrationButton from './close-registration-button'
+import ReopenRegistrationButton from './reopen-registration-button'
 import CreateTeamButton from './create-team-button'
 import DeleteLeagueButton from './delete-league-button'
 import RestoreLeagueButton from './restore-league-button'
@@ -65,6 +67,13 @@ export default async function LeaguePage({ params }: Props) {
   const teamByOwner = new Map<string, string>(
     (teamsData ?? []).map((t: any) => [t.owner_id, t.name])
   )
+
+  const { data: currentSeason } = await supabase
+    .from('seasons')
+    .select('id, status')
+    .eq('league_id', id)
+    .in('status', ['registration', 'locked'])
+    .maybeSingle()
 
   // Moja membership w tej lidze (active LUB pending — żeby wiedzieć, czy czekam)
   let myMembership: { role: string; status: string } | null = null
@@ -186,7 +195,22 @@ export default async function LeaguePage({ params }: Props) {
           )}
 
           <div className="flex gap-4 text-sm text-gray-400 flex-wrap">
-            {league.season_name && <span>Sezon: <span className="text-white">{league.season_name}</span></span>}
+            {league.season_name && (
+              <span className="flex items-center gap-2 flex-wrap">
+                <span>Sezon: <span className="text-white">{league.season_name}</span></span>
+                {currentSeason?.status === 'locked' && (
+                  <>
+                    <span className="text-xs text-gray-500">🔒 Zapisy zamknięte</span>
+                    {(isSuperAdmin || iAmLeagueAdmin) && (
+                      <ReopenRegistrationButton leagueId={id} />
+                    )}
+                  </>
+                )}
+                {currentSeason?.status === 'registration' && (isSuperAdmin || iAmLeagueAdmin) && (
+                  <CloseRegistrationButton leagueId={id} />
+                )}
+              </span>
+            )}
             <span>Zespoły: <span className="text-white">{memberCount} / {league.max_teams}</span></span>
             <span>Utworzono: <span className="text-white">{createdDate}</span></span>
           </div>
