@@ -1,3 +1,4 @@
+import CreateTeamButton from './create-team-button'
 import DeleteLeagueButton from './delete-league-button'
 import RestoreLeagueButton from './restore-league-button'
 import MemberRoleControls from './member-role-controls'
@@ -191,14 +192,21 @@ export default async function LeaguePage({ params }: Props) {
           </div>
 
         {myMembership?.status === 'active' ? (
-            <div className="mt-4 pt-4 border-t border-gray-700 text-sm flex justify-between items-center flex-wrap gap-3">
-              <div>
-                <span className="text-gray-400">Twoja rola w lidze: </span>
-                <span className={`text-xs rounded px-2 py-1 ${roleBadge(myMembership.role).cls}`}>
-                  {roleBadge(myMembership.role).label}
-                </span>
+            <div className="mt-4 pt-4 border-t border-gray-700 text-sm">
+              <div className="flex justify-between items-center flex-wrap gap-3">
+                <div>
+                  <span className="text-gray-400">Twoja rola w lidze: </span>
+                  <span className={`text-xs rounded px-2 py-1 ${roleBadge(myMembership.role).cls}`}>
+                    {roleBadge(myMembership.role).label}
+                  </span>
+                </div>
+                <LeaveLeagueButton leagueId={id} mode="active" />
               </div>
-              <LeaveLeagueButton leagueId={id} mode="active" />
+              {user && !teamByOwner.has(user.id) && (
+                <div className="mt-3">
+                  <CreateTeamButton leagueId={id} />
+                </div>
+              )}
             </div>
           ) : isSuperAdmin && !myMembership ? (
             <div className="mt-4 pt-4 border-t border-yellow-700/50 text-sm bg-yellow-900/20 -mx-6 -mb-6 px-6 py-3 rounded-b-lg">
