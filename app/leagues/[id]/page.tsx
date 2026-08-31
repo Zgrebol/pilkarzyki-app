@@ -1,5 +1,6 @@
 import CloseRegistrationButton from './close-registration-button'
 import RosterManagement from './roster-management'
+import MatchdayEditor from './matchday-editor'
 import ReopenRegistrationButton from './reopen-registration-button'
 import CreateTeamButton from './create-team-button'
 import DeleteLeagueButton from './delete-league-button'
@@ -78,6 +79,7 @@ export default async function LeaguePage({ params }: Props) {
 
   let seasonParticipants: any[] = []
   let rosterByParticipant = new Map<string, any[]>()
+  let matchdays: any[] = []
 
   if (currentSeason?.status === 'locked') {
     const { data: participantsData } = await supabase
@@ -86,6 +88,14 @@ export default async function LeaguePage({ params }: Props) {
       .eq('season_id', currentSeason.id)
 
     seasonParticipants = participantsData ?? []
+
+    const { data: matchdaysData } = await supabase
+      .from('matchdays')
+      .select('id, number, date_from, date_to, deadline')
+      .eq('season_id', currentSeason.id)
+      .order('number', { ascending: true })
+
+    matchdays = matchdaysData ?? []
 
     const participantIds = seasonParticipants.map((p: any) => p.id)
     if (participantIds.length > 0) {
@@ -448,6 +458,24 @@ export default async function LeaguePage({ params }: Props) {
                 })}
               </div>
             )}
+          </section>
+        )}
+
+        {/* Terminarz — widoczny tylko gdy locked i są kolejki */}
+        {currentSeason?.status === 'locked' && matchdays.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">
+              Terminarz ({matchdays.length} kolejek)
+            </h2>
+            <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+              {matchdays.map((md: any) => (
+                <MatchdayEditor
+                  key={md.id}
+                  matchday={md}
+                  canEdit={iAmLeagueAdmin || isSuperAdmin}
+                />
+              ))}
+            </div>
           </section>
         )}
 

@@ -84,6 +84,17 @@ export async function closeRegistration(leagueId: string) {
       if (insertError) {
         return { error: insertError.message }
       }
+
+      const N = qualifiedTeams.length
+      const numRounds = N < 2 ? 0 : (N % 2 === 0 ? (N - 1) * 2 : N * 2)
+
+      if (numRounds > 0) {
+        const { error: matchdayError } = await supabase
+          .from('matchdays')
+          .insert(Array.from({ length: numRounds }, (_, i) => ({ season_id: season.id, number: i + 1 })))
+
+        if (matchdayError) return { error: matchdayError.message }
+      }
     }
   }
 
@@ -124,6 +135,14 @@ export async function reopenRegistration(leagueId: string) {
   if (deleteError) {
     return { error: deleteError.message }
   }
+
+  // Kasowanie kolejek
+  const { error: matchdayDeleteError } = await supabase
+    .from('matchdays')
+    .delete()
+    .eq('season_id', season.id)
+
+  if (matchdayDeleteError) return { error: matchdayDeleteError.message }
 
   revalidatePath(`/leagues/${leagueId}`)
   return { success: true }
