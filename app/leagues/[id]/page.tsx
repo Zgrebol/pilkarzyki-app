@@ -461,21 +461,27 @@ export default async function LeaguePage({ params }: Props) {
           </section>
         )}
 
-        {/* Terminarz — widoczny tylko gdy locked i są kolejki */}
-        {currentSeason?.status === 'locked' && matchdays.length > 0 && (
+        {/* Terminarz — widoczny gdy locked */}
+        {currentSeason?.status === 'locked' && (
           <section className="mt-8">
             <h2 className="text-xl font-semibold mb-4">
-              Terminarz ({matchdays.length} kolejek)
+              Terminarz{matchdays.length > 0 && ` (${matchdays.length} kolejek)`}
             </h2>
-            <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
-              {matchdays.map((md: any) => (
-                <MatchdayEditor
-                  key={md.id}
-                  matchday={md}
-                  canEdit={iAmLeagueAdmin || isSuperAdmin}
-                />
-              ))}
-            </div>
+            {matchdays.length === 0 ? (
+              <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+                Brak kolejek. Aby wygenerować terminarz, otwórz zapisy ponownie i zamknij je jeszcze raz.
+              </div>
+            ) : (
+              <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+                {matchdays.map((md: any) => (
+                  <MatchdayEditor
+                    key={md.id}
+                    matchday={md}
+                    canEdit={iAmLeagueAdmin || isSuperAdmin}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
