@@ -1,4 +1,5 @@
 import CloseRegistrationButton from './close-registration-button'
+import RosterManagement from './roster-management'
 import ReopenRegistrationButton from './reopen-registration-button'
 import CreateTeamButton from './create-team-button'
 import DeleteLeagueButton from './delete-league-button'
@@ -74,6 +75,32 @@ export default async function LeaguePage({ params }: Props) {
     .eq('league_id', id)
     .in('status', ['registration', 'locked'])
     .maybeSingle()
+
+  let seasonParticipants: any[] = []
+  let rosterByParticipant = new Map<string, any[]>()
+
+  if (currentSeason?.status === 'locked') {
+    const { data: participantsData } = await supabase
+      .from('season_participants')
+      .select('id, teams(name, owner_id, profiles(display_name))')
+      .eq('season_id', currentSeason.id)
+
+    seasonParticipants = participantsData ?? []
+
+    const participantIds = seasonParticipants.map((p: any) => p.id)
+    if (participantIds.length > 0) {
+      const { data: allPlayers } = await supabase
+        .from('roster_players')
+        .select('id, season_participant_id, full_name, club, position, league')
+        .in('season_participant_id', participantIds)
+
+      for (const player of (allPlayers ?? []) as any[]) {
+        const list = rosterByParticipant.get(player.season_participant_id) ?? []
+        list.push(player)
+        rosterByParticipant.set(player.season_participant_id, list)
+      }
+    }
+  }
 
   // Moja membership w tej lidze (active LUB pending — żeby wiedzieć, czy czekam)
   let myMembership: { role: string; status: string } | null = null
@@ -381,6 +408,46 @@ export default async function LeaguePage({ params }: Props) {
               leagueId={id}
               pendingMembers={pendingMembers}
             />
+          </section>
+        )}
+
+        {/* Uczestnicy sezonu — widoczne tylko gdy locked */}
+        {currentSeason?.status === 'locked' && (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Uczestnicy sezonu</h2>
+            {seasonParticipants.length === 0 ? (
+              <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+                Brak drużyn zapisanych do sezonu.
+              </div>
+            ) : (
+              <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+                {seasonParticipants.map((p: any) => {
+                  const roster = rosterByParticipant.get(p.id) ?? []
+                  return (
+                    <div key={p.id} className="px-5 py-4">
+                      <div className="flex justify-between items-start flex-wrap gap-2 mb-2">
+                        <div>
+                          <p className="font-medium">{p.teams?.name ?? '(brak nazwy)'}</p>
+                          <p className="text-xs text-gray-400">
+                            {p.teams?.profiles?.display_name ?? '(brak właściciela)'}
+                          </p>
+                        </div>
+                        <span className={`text-xs rounded px-2 py-1 ${roster.length >= 9 ? 'bg-green-700' : 'bg-gray-700'}`}>
+                          {roster.length}/9 zawodników
+                        </span>
+                      </div>
+                      {canModerate && (
+                        <RosterManagement
+                          leagueId={id}
+                          seasonParticipantId={p.id}
+                          players={roster}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </section>
         )}
 

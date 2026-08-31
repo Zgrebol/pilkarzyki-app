@@ -60,6 +60,33 @@ export async function closeRegistration(leagueId: string) {
     return { error: updateError.message }
   }
 
+  // Krystalizacja uczestników: aktywni członkowie z drużyną → season_participants
+  const { data: activeMembers } = await supabase
+    .from('league_members')
+    .select('user_id')
+    .eq('league_id', leagueId)
+    .eq('status', 'active')
+
+  const memberUserIds = (activeMembers ?? []).map((m: any) => m.user_id)
+
+  if (memberUserIds.length > 0) {
+    const { data: qualifiedTeams } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('league_id', leagueId)
+      .in('owner_id', memberUserIds)
+
+    if (qualifiedTeams && qualifiedTeams.length > 0) {
+      const { error: insertError } = await supabase
+        .from('season_participants')
+        .insert(qualifiedTeams.map((t: any) => ({ season_id: season.id, team_id: t.id })))
+
+      if (insertError) {
+        return { error: insertError.message }
+      }
+    }
+  }
+
   revalidatePath(`/leagues/${leagueId}`)
   return { success: true }
 }
@@ -86,6 +113,16 @@ export async function reopenRegistration(leagueId: string) {
 
   if (updateError) {
     return { error: updateError.message }
+  }
+
+  // Kasowanie listy uczestników przy ponownym otwarciu zapisów
+  const { error: deleteError } = await supabase
+    .from('season_participants')
+    .delete()
+    .eq('season_id', season.id)
+
+  if (deleteError) {
+    return { error: deleteError.message }
   }
 
   revalidatePath(`/leagues/${leagueId}`)
