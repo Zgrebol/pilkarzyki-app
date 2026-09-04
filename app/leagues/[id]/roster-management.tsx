@@ -101,58 +101,68 @@ export default function RosterManagement({ leagueId: _leagueId, seasonParticipan
       </div>
 
       {players.length > 0 && (
-        <div className="divide-y divide-gray-700 mb-4">
-          {players.map(player => (
-            <div key={player.id} className="py-2">
-              {editingId === player.id ? (
-                <form onSubmit={e => handleUpdate(e, player.id)} className="flex flex-col gap-2">
-                  <PlayerFormFields form={editForm} onChange={setEditForm} disabled={isPending} formId={player.id} />
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      disabled={isPending}
-                      className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded px-3 py-1 text-white"
-                    >
-                      {isPending ? 'Zapisuję…' : 'Zapisz'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      disabled={isPending}
-                      className="text-xs text-gray-400 hover:text-white disabled:opacity-50"
-                    >
-                      Anuluj
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{player.full_name}</p>
-                    <p className="text-xs text-gray-400">
-                      {player.position} · {player.club} · {player.league}
-                    </p>
-                  </div>
-                  <div className="flex gap-3 shrink-0">
-                    <button
-                      onClick={() => startEdit(player)}
-                      disabled={isPending}
-                      className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50"
-                    >
-                      Edytuj
-                    </button>
-                    <button
-                      onClick={() => handleDelete(player.id, player.full_name)}
-                      disabled={isPending}
-                      className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
-                    >
-                      Usuń
-                    </button>
-                  </div>
+        <div className="mb-4">
+          {(['napastnik', 'pomocnik'] as const).map(pos => {
+            const group = players.filter(p => p.position === pos)
+            if (group.length === 0) return null
+            return (
+              <div key={pos} className="mb-3">
+                <p className="text-xs font-bold text-gray-300 mb-1">
+                  {pos === 'napastnik' ? 'Napastnicy:' : 'Pomocnicy:'}
+                </p>
+                <div className="divide-y divide-gray-700">
+                  {group.map(player => (
+                    <div key={player.id} className="py-2">
+                      {editingId === player.id ? (
+                        <form onSubmit={e => handleUpdate(e, player.id)} className="flex flex-col gap-2">
+                          <PlayerFormFields form={editForm} onChange={setEditForm} disabled={isPending} formId={player.id} />
+                          <div className="flex gap-2">
+                            <button
+                              type="submit"
+                              disabled={isPending}
+                              className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded px-3 py-1 text-white"
+                            >
+                              {isPending ? 'Zapisuję…' : 'Zapisz'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              disabled={isPending}
+                              className="text-xs text-gray-400 hover:text-white disabled:opacity-50"
+                            >
+                              Anuluj
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="flex justify-between items-start gap-2">
+                          <p className="text-sm">
+                            {player.full_name} ({player.club}, {player.league})
+                          </p>
+                          <div className="flex gap-3 shrink-0">
+                            <button
+                              onClick={() => startEdit(player)}
+                              disabled={isPending}
+                              className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50"
+                            >
+                              Edytuj
+                            </button>
+                            <button
+                              onClick={() => handleDelete(player.id, player.full_name)}
+                              disabled={isPending}
+                              className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
+                            >
+                              Usuń
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            )
+          })}
         </div>
       )}
 
