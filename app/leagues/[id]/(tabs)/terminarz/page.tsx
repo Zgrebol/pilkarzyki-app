@@ -72,12 +72,13 @@ export default async function TerminarzPage({ params }: Props) {
   let byesByMatchday = new Map<string, any[]>()
   let hasPairs = false
 
-  // Mapa uczestnik_id → {teamName, tier} do wyświetlania par
-  const participantMap = new Map<string, { teamName: string; tier: number }>()
+  // Mapa uczestnik_id → {teamName, tier, ownerId}
+  const participantMap = new Map<string, { teamName: string; tier: number; ownerId: string | null }>()
   for (const p of seasonParticipants as any[]) {
     participantMap.set(p.id, {
       teamName: p.teams?.name ?? '(brak)',
       tier: p.tier ?? 1,
+      ownerId: p.teams?.owner_id ?? null,
     })
   }
 
@@ -181,81 +182,128 @@ export default async function TerminarzPage({ params }: Props) {
                   canEdit={iAmLeagueAdmin || isSuperAdmin}
                 />
 
-                {/* Pary meczowe dla tej kolejki */}
-                {hasPairs && (
-                  <div className="px-5 pb-3 border-t border-gray-700/40">
+                {hasPairs ? (
+                  /* ── NOWY WIDOK: pary z trójkami inline ── */
+                  <div className="px-5 pb-4 pt-2 border-t border-gray-700/40">
                     {mdPairs.length === 0 && mdByes.length === 0 ? (
-                      <p className="text-xs text-gray-600 pt-2">Brak meczy w tej kolejce</p>
+                      <p className="text-xs text-gray-600">Brak meczy w tej kolejce</p>
                     ) : (
-                      [1, 2].map(tier => {
-                        const tp = mdPairs.filter((p: any) => p.tier === tier)
-                        const tb = mdByes.filter((b: any) => b.tier === tier)
-                        if (tp.length === 0 && tb.length === 0) return null
-                        return (
-                          <div key={tier} className="pt-2">
-                            {hasBothTiers && (
-                              <p className="text-xs text-gray-500 font-medium mb-1">Poziom {tier}</p>
-                            )}
-                            <div className="space-y-0.5">
-                              {tp.map((pair: any) => (
-                                <div key={pair.id} className="flex items-center gap-2 text-sm">
-                                  <span className="flex-1 text-right text-gray-200 truncate">
-                                    {participantMap.get(pair.home_participant_id)?.teamName ?? '?'}
-                                  </span>
-                                  <span className="text-gray-600 text-xs shrink-0">vs</span>
-                                  <span className="flex-1 text-gray-200 truncate">
-                                    {participantMap.get(pair.away_participant_id)?.teamName ?? '?'}
-                                  </span>
-                                </div>
-                              ))}
-                              {tb.map((bye: any) => (
-                                <p key={bye.id} className="text-xs text-gray-500">
-                                  Pauza: {participantMap.get(bye.participant_id)?.teamName ?? '?'}
+                      <div className="space-y-4">
+                        {[1, 2].map(tier => {
+                          const tp = mdPairs.filter((p: any) => p.tier === tier)
+                          const tb = mdByes.filter((b: any) => b.tier === tier)
+                          if (tp.length === 0 && tb.length === 0) return null
+                          return (
+                            <div key={tier}>
+                              {hasBothTiers && (
+                                <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
+                                  Poziom {tier}
                                 </p>
-                              ))}
+                              )}
+                              <div className="space-y-3">
+                                {tp.map((pair: any) => {
+                                  const homeInfo = participantMap.get(pair.home_participant_id)
+                                  const awayInfo = participantMap.get(pair.away_participant_id)
+                                  const homeRoster = rosterByParticipant.get(pair.home_participant_id) ?? []
+                                  const awayRoster = rosterByParticipant.get(pair.away_participant_id) ?? []
+                                  const homeLineup = lineupMap.get(`${md.id}_${pair.home_participant_id}`) ?? null
+                                  const awayLineup = lineupMap.get(`${md.id}_${pair.away_participant_id}`) ?? null
+                                  const isHomeOwner = homeInfo?.ownerId === user?.id
+                                  const isAwayOwner = awayInfo?.ownerId === user?.id
+                                  const canEditHome = canModerate || (!!isHomeOwner && deadlineNotPassed)
+                                  const canEditAway = canModerate || (!!isAwayOwner && deadlineNotPassed)
+
+                                  return (
+                                    <div key={pair.id}>
+                                      {/* Linia 1: nazwy drużyn */}
+                                      <p className="text-sm font-medium text-white">
+                                        {homeInfo?.teamName ?? '?'}
+                                        <span className="text-gray-500 mx-1.5">-</span>
+                                        {awayInfo?.teamName ?? '?'}
+                                      </p>
+                                      {/* Linia 2: trójki w nawiasach */}
+                                      <div className="text-sm text-gray-400 flex flex-wrap items-baseline gap-x-1 mt-0.5">
+                                        <span>[</span>
+                                        {homeRoster.length < 3 ? (
+                                          <span className="text-yellow-600 text-xs">Skład niekompletny</span>
+                                        ) : (
+                                          <LineupEditor
+                                            compact
+                                            matchdayId={md.id}
+                                            seasonParticipantId={pair.home_participant_id}
+                                            currentLineup={homeLineup}
+                                            rosterPlayers={homeRoster}
+                                            canEdit={canEditHome}
+                                          />
+                                        )}
+                                        <span className="text-gray-600 select-none"> — </span>
+                                        {awayRoster.length < 3 ? (
+                                          <span className="text-yellow-600 text-xs">Skład niekompletny</span>
+                                        ) : (
+                                          <LineupEditor
+                                            compact
+                                            matchdayId={md.id}
+                                            seasonParticipantId={pair.away_participant_id}
+                                            currentLineup={awayLineup}
+                                            rosterPlayers={awayRoster}
+                                            canEdit={canEditAway}
+                                          />
+                                        )}
+                                        <span>]</span>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                                {tb.map((bye: any) => (
+                                  <p key={bye.id} className="text-xs text-gray-500">
+                                    (Pauza: {participantMap.get(bye.participant_id)?.teamName ?? '?'})
+                                  </p>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )
-                      })
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
-                )}
-
-                {seasonParticipants.length > 0 && (
-                  <details className="px-5 pb-3">
-                    <summary className="text-xs text-gray-400 cursor-pointer select-none hover:text-gray-300 mb-2">
-                      Trójki meczowe ({seasonParticipants.length})
-                    </summary>
-                    <div className="mt-2 flex flex-col gap-2">
-                      {(seasonParticipants as any[]).map((p: any) => {
-                        const roster = rosterByParticipant.get(p.id) ?? []
-                        const lineup = lineupMap.get(`${md.id}_${p.id}`) ?? null
-                        const isOwner = p.teams?.owner_id === user?.id
-                        const canEditLineup = canModerate || (isOwner && deadlineNotPassed)
-                        return (
-                          <div key={p.id} className="bg-gray-900 rounded p-3">
-                            <div className="mb-2">
-                              <p className="text-sm font-medium">{p.teams?.name ?? '(brak nazwy)'}</p>
-                              <p className="text-xs text-gray-400">{p.teams?.profiles?.display_name ?? ''}</p>
+                ) : (
+                  /* ── FALLBACK: stary widok gdy pary nie istnieją ── */
+                  seasonParticipants.length > 0 && (
+                    <details className="px-5 pb-3">
+                      <summary className="text-xs text-gray-400 cursor-pointer select-none hover:text-gray-300 mb-2">
+                        Trójki meczowe ({seasonParticipants.length})
+                      </summary>
+                      <div className="mt-2 flex flex-col gap-2">
+                        {(seasonParticipants as any[]).map((p: any) => {
+                          const roster = rosterByParticipant.get(p.id) ?? []
+                          const lineup = lineupMap.get(`${md.id}_${p.id}`) ?? null
+                          const isOwner = p.teams?.owner_id === user?.id
+                          const canEditLineup = canModerate || (isOwner && deadlineNotPassed)
+                          return (
+                            <div key={p.id} className="bg-gray-900 rounded p-3">
+                              <div className="mb-2">
+                                <p className="text-sm font-medium">{p.teams?.name ?? '(brak nazwy)'}</p>
+                                <p className="text-xs text-gray-400">{p.teams?.profiles?.display_name ?? ''}</p>
+                              </div>
+                              {roster.length < 3 ? (
+                                <p className="text-xs text-yellow-500">
+                                  Skład niekompletny — potrzeba minimum 3 zawodników
+                                </p>
+                              ) : (
+                                <LineupEditor
+                                  matchdayId={md.id}
+                                  seasonParticipantId={p.id}
+                                  currentLineup={lineup}
+                                  rosterPlayers={roster}
+                                  canEdit={canEditLineup}
+                                />
+                              )}
                             </div>
-                            {roster.length < 3 ? (
-                              <p className="text-xs text-yellow-500">
-                                Skład niekompletny — potrzeba minimum 3 zawodników
-                              </p>
-                            ) : (
-                              <LineupEditor
-                                matchdayId={md.id}
-                                seasonParticipantId={p.id}
-                                currentLineup={lineup}
-                                rosterPlayers={roster}
-                                canEdit={canEditLineup}
-                              />
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </details>
+                          )
+                        })}
+                      </div>
+                    </details>
+                  )
                 )}
               </div>
             )

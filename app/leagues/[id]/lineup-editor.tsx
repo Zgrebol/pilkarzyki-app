@@ -24,6 +24,7 @@ type Props = {
   currentLineup: Lineup | null
   rosterPlayers: RosterPlayer[]
   canEdit: boolean
+  compact?: boolean
 }
 
 export default function LineupEditor({
@@ -32,6 +33,7 @@ export default function LineupEditor({
   currentLineup,
   rosterPlayers,
   canEdit,
+  compact = false,
 }: Props) {
   const [editing, setEditing] = useState(false)
   const [p1, setP1] = useState(currentLineup?.player1_id ?? '')
@@ -110,6 +112,54 @@ export default function LineupEditor({
   }
 
   if (!editing) {
+    // Tryb kompaktowy: imiona inline, przycisk ✏️
+    if (compact) {
+      if (currentLineup) {
+        const playerIds = (
+          [currentLineup.player1_id, currentLineup.player2_id, currentLineup.player3_id] as (string | null)[]
+        ).filter((id): id is string => id !== null)
+        const names = playerIds.map(id => playerMap.get(id)?.full_name ?? '?')
+        const isIncomplete = !currentLineup.player2_id || !currentLineup.player3_id
+        return (
+          <span className="inline-flex items-baseline flex-wrap gap-x-1">
+            <span className={isIncomplete ? 'text-yellow-500' : 'text-gray-200'}>
+              {names.join(', ')}
+              {isIncomplete && (
+                <em className="text-gray-500 text-xs ml-1 not-italic">(niekompletna)</em>
+              )}
+              {currentLineup.is_iron && !isIncomplete && (
+                <span className="text-gray-600 text-xs ml-1">🤖</span>
+              )}
+            </span>
+            {canEdit && (
+              <button
+                onClick={handleEdit}
+                className="text-xs text-blue-500 hover:text-blue-300 shrink-0 ml-0.5"
+                title="Edytuj trójkę meczową"
+              >
+                ✏️
+              </button>
+            )}
+          </span>
+        )
+      }
+      // Brak trójki w trybie kompaktowym
+      return (
+        <span className="inline-flex items-baseline gap-x-1">
+          <em className="text-gray-500">Skład niewystawiony</em>
+          {canEdit && (
+            <button
+              onClick={handleEdit}
+              className="text-xs text-blue-500 hover:text-blue-300 shrink-0"
+            >
+              Wybierz
+            </button>
+          )}
+        </span>
+      )
+    }
+
+    // Tryb standardowy (pełny widok)
     if (currentLineup) {
       const isIncomplete = currentLineup.player2_id == null || currentLineup.player3_id == null
       return (
@@ -157,7 +207,7 @@ export default function LineupEditor({
   ]
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-2 mt-1">
+    <form onSubmit={handleSave} className={`flex flex-col gap-2 mt-1${compact ? ' w-full' : ''}`}>
       {selects.map(({ label, val, set }, idx) => (
         <div key={idx} className="flex items-center gap-2">
           <span className="text-xs text-gray-500 w-4 shrink-0">{label}</span>
