@@ -460,6 +460,24 @@ export default async function LeaguePage({ params }: Props) {
                           {roster.length}/9 zawodników
                         </span>
                       </div>
+                      {roster.length === 0 ? (
+                        <p className="text-xs text-gray-500 italic mb-2">Brak zawodników w składzie</p>
+                      ) : (
+                        <div className="text-xs text-gray-300 mb-2 space-y-0.5">
+                          {roster.filter((pl: any) => pl.position === 'napastnik').length > 0 && (
+                            <p>
+                              <span className="font-bold text-gray-200">Napastnicy:</span>{' '}
+                              {roster.filter((pl: any) => pl.position === 'napastnik').map((pl: any) => `${pl.full_name} (${pl.club})`).join(', ')}
+                            </p>
+                          )}
+                          {roster.filter((pl: any) => pl.position === 'pomocnik').length > 0 && (
+                            <p>
+                              <span className="font-bold text-gray-200">Pomocnicy:</span>{' '}
+                              {roster.filter((pl: any) => pl.position === 'pomocnik').map((pl: any) => `${pl.full_name} (${pl.club})`).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      )}
                       {canModerate && (
                         <RosterManagement
                           leagueId={id}
