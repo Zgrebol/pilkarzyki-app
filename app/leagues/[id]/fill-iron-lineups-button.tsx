@@ -22,7 +22,14 @@ export default function FillIronLineupsButton({ seasonId }: Props) {
         setError(res.error)
       } else {
         const filled = (res as any).filled ?? 0
-        setMessage(`Uzupełniono ${filled} żelaznych trójek`)
+        const incomplete = (res as any).incomplete ?? 0
+        if (incomplete > 0) {
+          setMessage(
+            `Wpisano ${filled} trójek, w tym ${incomplete} niekompletnych. Skontroluj drużyny z niekompletnymi trójkami.`
+          )
+        } else {
+          setMessage(`Uzupełniono ${filled} żelaznych trójek`)
+        }
       }
     })
   }

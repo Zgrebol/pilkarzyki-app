@@ -8,12 +8,13 @@ type RosterPlayer = {
   full_name: string
   club: string
   position: string
+  league: string
 }
 
 type Lineup = {
   player1_id: string
-  player2_id: string
-  player3_id: string
+  player2_id: string | null
+  player3_id: string | null
   is_iron: boolean
 }
 
@@ -36,7 +37,7 @@ export default function LineupEditor({
   const [p1, setP1] = useState(currentLineup?.player1_id ?? '')
   const [p2, setP2] = useState(currentLineup?.player2_id ?? '')
   const [p3, setP3] = useState(currentLineup?.player3_id ?? '')
-  const [error, setError] = useState<string | null>(null)
+  const [serverError, setServerError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const playerMap = new Map(rosterPlayers.map(p => [p.id, p]))
@@ -44,37 +45,64 @@ export default function LineupEditor({
   function playerLabel(id: string) {
     const p = playerMap.get(id)
     if (!p) return '(nieznany zawodnik)'
-    return `${p.full_name} · ${p.position} · ${p.club}`
+    return `${p.full_name} (${p.league}) · ${p.position} · ${p.club}`
   }
+
+  function validateLineup(ids: [string, string, string]): string | null {
+    const selected = ids
+      .map(id => playerMap.get(id))
+      .filter((p): p is RosterPlayer => p !== undefined)
+    if (selected.length < 3) return null
+
+    const leagueEntries = selected.map(p => ({
+      orig: p.league.trim(),
+      lower: p.league.trim().toLowerCase(),
+    }))
+    const uniqueLowers = new Set(leagueEntries.map(l => l.lower))
+    if (uniqueLowers.size < 3) {
+      const lowerCounts = new Map<string, number>()
+      for (const l of leagueEntries) lowerCounts.set(l.lower, (lowerCounts.get(l.lower) ?? 0) + 1)
+      const repeatedLower = [...lowerCounts.entries()].find(([, c]) => c > 1)?.[0]
+      const repeated = leagueEntries.find(l => l.lower === repeatedLower)?.orig ?? repeatedLower ?? ''
+      return `Dwóch zawodników z ligi ${repeated}`
+    }
+    if (selected.filter(p => p.position === 'napastnik').length > 2) {
+      return 'Maksymalnie 2 napastników'
+    }
+    return null
+  }
+
+  const clientValidationError = (p1 && p2 && p3) ? validateLineup([p1, p2, p3]) : null
 
   function handleEdit() {
     setP1(currentLineup?.player1_id ?? '')
     setP2(currentLineup?.player2_id ?? '')
     setP3(currentLineup?.player3_id ?? '')
-    setError(null)
+    setServerError(null)
     setEditing(true)
   }
 
   function handleCancel() {
-    setError(null)
+    setServerError(null)
     setEditing(false)
   }
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!p1 || !p2 || !p3) {
-      setError('Wybierz trzech zawodników')
+      setServerError('Wybierz trzech zawodników')
       return
     }
     if (p1 === p2 || p1 === p3 || p2 === p3) {
-      setError('Zawodnicy muszą być różni')
+      setServerError('Zawodnicy muszą być różni')
       return
     }
-    setError(null)
+    if (clientValidationError) return
+    setServerError(null)
     startTransition(async () => {
       const res = await setLineup(matchdayId, seasonParticipantId, p1, p2, p3)
       if (res?.error) {
-        setError(res.error)
+        setServerError(res.error)
       } else {
         setEditing(false)
       }
@@ -83,14 +111,18 @@ export default function LineupEditor({
 
   if (!editing) {
     if (currentLineup) {
+      const isIncomplete = currentLineup.player2_id == null || currentLineup.player3_id == null
       return (
         <div className="flex flex-col gap-1">
-          {currentLineup.is_iron && (
+          {currentLineup.is_iron && !isIncomplete && (
             <span className="text-xs text-gray-500">🤖 auto-wypełniona</span>
           )}
-          {[currentLineup.player1_id, currentLineup.player2_id, currentLineup.player3_id].map((pid, i) => (
-            <p key={pid} className="text-xs text-gray-300">
-              {i + 1}. {playerLabel(pid)}
+          {currentLineup.is_iron && isIncomplete && (
+            <span className="text-xs text-red-400">🤖 auto, niekompletna</span>
+          )}
+          {([currentLineup.player1_id, currentLineup.player2_id, currentLineup.player3_id] as (string | null)[]).map((pid, i) => (
+            <p key={i} className={`text-xs ${pid ? 'text-gray-300' : 'text-gray-500'}`}>
+              {i + 1}. {pid ? playerLabel(pid) : '—'}
             </p>
           ))}
           {canEdit && (
@@ -139,16 +171,19 @@ export default function LineupEditor({
             <option value="">— wybierz zawodnika —</option>
             {rosterPlayers.map(p => (
               <option key={p.id} value={p.id}>
-                {p.full_name} ({p.position}, {p.club})
+                {p.full_name} ({p.league}) — {p.position}
               </option>
             ))}
           </select>
         </div>
       ))}
+      {clientValidationError && (
+        <p className="text-xs text-orange-400">{clientValidationError}</p>
+      )}
       <div className="flex gap-2 items-center">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || !!clientValidationError}
           className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded px-3 py-1 text-white"
         >
           {isPending ? 'Zapisuję…' : 'Zapisz trójkę'}
@@ -162,7 +197,7 @@ export default function LineupEditor({
           Anuluj
         </button>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {serverError && <p className="text-xs text-red-400">{serverError}</p>}
     </form>
   )
 }

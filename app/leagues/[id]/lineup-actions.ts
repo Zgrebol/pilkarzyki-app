@@ -113,14 +113,34 @@ export async function setLineup(
     }
   }
 
-  const { count: validCount } = await supabase
+  const { data: playerDetails } = await supabase
     .from('roster_players')
-    .select('id', { count: 'exact', head: true })
+    .select('id, position, league')
     .eq('season_participant_id', seasonParticipantId)
     .in('id', [player1Id, player2Id, player3Id])
 
-  if (validCount !== 3) {
+  if (!playerDetails || playerDetails.length !== 3) {
     return { error: 'Jeden lub więcej zawodników nie należy do składu tej drużyny' }
+  }
+
+  // Reguła: 3 różne ligi (case-insensitive)
+  const leagueEntries = (playerDetails as any[]).map((p: any) => ({
+    orig: p.league?.trim() ?? '',
+    lower: (p.league?.trim() ?? '').toLowerCase(),
+  }))
+  const uniqueLeagueLowers = new Set(leagueEntries.map(l => l.lower))
+  if (uniqueLeagueLowers.size < 3) {
+    const lowerCounts = new Map<string, number>()
+    for (const l of leagueEntries) lowerCounts.set(l.lower, (lowerCounts.get(l.lower) ?? 0) + 1)
+    const repeatedLower = [...lowerCounts.entries()].find(([, c]) => c > 1)?.[0]
+    const repeated = leagueEntries.find(l => l.lower === repeatedLower)?.orig ?? repeatedLower
+    return { error: `Zawodnicy muszą być z 3 różnych lig. Powtarzająca się liga: ${repeated}` }
+  }
+
+  // Reguła: maks. 2 napastników
+  const forwardsCount = (playerDetails as any[]).filter((p: any) => p.position === 'napastnik').length
+  if (forwardsCount > 2) {
+    return { error: 'Maksymalnie 2 napastników w trójce' }
   }
 
   const { error: upsertError } = await supabase
@@ -165,7 +185,7 @@ export async function fillIronLineups(seasonId: string) {
     .lt('deadline', now)
 
   if (!closedMatchdays || closedMatchdays.length === 0) {
-    return { success: true, filled: 0 }
+    return { success: true, filled: 0, incomplete: 0 }
   }
 
   const { data: participants } = await supabase
@@ -174,7 +194,7 @@ export async function fillIronLineups(seasonId: string) {
     .eq('season_id', seasonId)
 
   if (!participants || participants.length === 0) {
-    return { success: true, filled: 0 }
+    return { success: true, filled: 0, incomplete: 0 }
   }
 
   const matchdayIds = (closedMatchdays as any[]).map(m => m.id)
@@ -191,39 +211,58 @@ export async function fillIronLineups(seasonId: string) {
 
   const { data: allRosterPlayers } = await supabase
     .from('roster_players')
-    .select('id, season_participant_id')
+    .select('id, season_participant_id, league, position')
     .in('season_participant_id', participantIds)
     .order('created_at', { ascending: true })
 
-  const rosterByParticipant = new Map<string, string[]>()
+  type PlayerData = { id: string; league: string; position: string }
+  const rosterByParticipant = new Map<string, PlayerData[]>()
   for (const player of (allRosterPlayers ?? []) as any[]) {
     const list = rosterByParticipant.get(player.season_participant_id) ?? []
-    list.push(player.id)
+    list.push({ id: player.id, league: player.league ?? '', position: player.position ?? '' })
     rosterByParticipant.set(player.season_participant_id, list)
   }
 
   const toInsert: any[] = []
+  let incompleteCount = 0
+
   for (const matchday of closedMatchdays as any[]) {
     for (const participant of participants as any[]) {
       const key = `${matchday.id}_${participant.id}`
       if (existingSet.has(key)) continue
 
       const players = rosterByParticipant.get(participant.id) ?? []
-      if (players.length < 3) continue
+
+      const selected: PlayerData[] = []
+      const usedLeagues = new Set<string>()
+      let forwardsCount = 0
+
+      for (const player of players) {
+        if (selected.length === 3) break
+        const leagueKey = player.league.trim().toLowerCase()
+        if (usedLeagues.has(leagueKey)) continue
+        if (player.position === 'napastnik' && forwardsCount === 2) continue
+        selected.push(player)
+        usedLeagues.add(leagueKey)
+        if (player.position === 'napastnik') forwardsCount++
+      }
+
+      if (selected.length === 0) continue
 
       toInsert.push({
         matchday_id: matchday.id,
         season_participant_id: participant.id,
-        player1_id: players[0],
-        player2_id: players[1],
-        player3_id: players[2],
+        player1_id: selected[0].id,
+        player2_id: selected[1]?.id ?? null,
+        player3_id: selected[2]?.id ?? null,
         is_iron: true,
       })
+      if (selected.length < 3) incompleteCount++
     }
   }
 
   if (toInsert.length === 0) {
-    return { success: true, filled: 0 }
+    return { success: true, filled: 0, incomplete: 0 }
   }
 
   const { error: insertError } = await supabase
@@ -233,5 +272,5 @@ export async function fillIronLineups(seasonId: string) {
   if (insertError) return { error: insertError.message }
 
   revalidatePath(`/leagues/${leagueId}`)
-  return { success: true, filled: toInsert.length }
+  return { success: true, filled: toInsert.length, incomplete: incompleteCount }
 }
