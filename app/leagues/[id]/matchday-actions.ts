@@ -72,6 +72,6 @@ export async function updateMatchday(matchdayId: string, data: MatchdayData) {
 
   if (updateError) return { error: updateError.message }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }

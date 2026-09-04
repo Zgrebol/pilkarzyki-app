@@ -88,7 +88,7 @@ export async function joinLeague(leagueId: string, formData: FormData) {
     return { error: insertError.message }
   }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   revalidatePath('/')
   redirect(`/leagues/${leagueId}`)
 }

@@ -157,7 +157,7 @@ export async function setLineup(
 
   if (upsertError) return { error: upsertError.message }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }
 
@@ -271,6 +271,6 @@ export async function fillIronLineups(seasonId: string) {
 
   if (insertError) return { error: insertError.message }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true, filled: toInsert.length, incomplete: incompleteCount }
 }

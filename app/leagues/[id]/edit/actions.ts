@@ -70,7 +70,7 @@ export async function updateLeague(leagueId: string, formData: FormData) {
     return { error: 'Nie masz uprawnień do edycji tej ligi.' }
   }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   revalidatePath('/')
   redirect(`/leagues/${leagueId}`)
 }

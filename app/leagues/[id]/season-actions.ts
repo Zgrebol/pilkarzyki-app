@@ -98,7 +98,7 @@ export async function closeRegistration(leagueId: string) {
     }
   }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }
 
@@ -144,6 +144,6 @@ export async function reopenRegistration(leagueId: string) {
 
   if (matchdayDeleteError) return { error: matchdayDeleteError.message }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }

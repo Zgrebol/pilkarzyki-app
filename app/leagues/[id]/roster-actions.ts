@@ -99,7 +99,7 @@ export async function addRosterPlayer(seasonParticipantId: string, playerData: P
 
   if (insertError) return { error: insertError.message }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }
 
@@ -139,7 +139,7 @@ export async function updateRosterPlayer(playerId: string, playerData: PlayerDat
 
   if (updateError) return { error: updateError.message }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }
 
@@ -171,6 +171,6 @@ export async function deleteRosterPlayer(playerId: string) {
 
   if (deleteError) return { error: deleteError.message }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }

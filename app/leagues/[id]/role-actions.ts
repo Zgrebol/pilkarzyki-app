@@ -105,7 +105,7 @@ export async function changeMemberRole(leagueId: string, memberId: string, newRo
     return { error: msg || 'Nie udało się zmienić roli' }
   }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   revalidatePath('/')
   return { success: true }
 }

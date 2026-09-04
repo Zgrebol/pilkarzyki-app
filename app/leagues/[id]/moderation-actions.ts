@@ -98,7 +98,7 @@ export async function approveMember(leagueId: string, memberId: string) {
     return { error: updateError.message }
   }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   revalidatePath('/')
   return { success: true }
 }
@@ -132,6 +132,6 @@ export async function rejectMember(leagueId: string, memberId: string) {
     return { error: deleteError.message }
   }
 
-  revalidatePath(`/leagues/${leagueId}`)
+  revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
 }
