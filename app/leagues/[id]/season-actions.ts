@@ -117,6 +117,26 @@ export async function reopenRegistration(leagueId: string) {
     return { error: 'Brak zamkniętego sezonu do otwarcia' }
   }
 
+  // Zablokuj jeśli pary meczowe są już wygenerowane
+  const { data: mds } = await supabase
+    .from('matchdays')
+    .select('id')
+    .eq('season_id', season.id)
+
+  const matchdayIds = (mds ?? []).map((m: any) => m.id)
+  if (matchdayIds.length > 0) {
+    const { count: pairsCount } = await supabase
+      .from('matchday_pairs')
+      .select('id', { count: 'exact', head: true })
+      .in('matchday_id', matchdayIds)
+
+    if ((pairsCount ?? 0) > 0) {
+      return {
+        error: 'Nie można otworzyć zapisów — pary meczowe są już wygenerowane. Użyj Awaryjnego otwarcia (tylko super admin).',
+      }
+    }
+  }
+
   const { error: updateError } = await supabase
     .from('seasons')
     .update({ status: 'registration' })

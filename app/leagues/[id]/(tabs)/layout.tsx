@@ -10,6 +10,7 @@ import LeaveLeagueButton from '../leave-league-button'
 import CreateTeamButton from '../create-team-button'
 import FillIronLineupsButton from '../fill-iron-lineups-button'
 import PendingMembersPanel from '../pending-members-panel'
+import EmergencyReopenButton from '../emergency-reopen-button'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -92,6 +93,23 @@ export default async function LeagueLayout({ params, children }: Props) {
   const spotsLeft = league.max_teams - (memberCount ?? 0)
   const isFull = spotsLeft <= 0
   const createdDate = new Date(league.created_at).toLocaleDateString('pl-PL')
+
+  // Sprawdź czy pary meczowe istnieją (blokuje normalne otwarcie zapisów)
+  let hasPairs = false
+  if (currentSeason?.status === 'locked') {
+    const { data: seasonMds } = await supabase
+      .from('matchdays')
+      .select('id')
+      .eq('season_id', currentSeason.id)
+
+    if ((seasonMds ?? []).length > 0) {
+      const { count: pc } = await supabase
+        .from('matchday_pairs')
+        .select('id', { count: 'exact', head: true })
+        .in('matchday_id', (seasonMds ?? []).map((m: any) => m.id))
+      hasPairs = (pc ?? 0) > 0
+    }
+  }
 
   let pendingMembers: Array<{
     id: string
@@ -176,7 +194,19 @@ export default async function LeagueLayout({ params, children }: Props) {
                   <>
                     <span className="text-xs text-gray-500">🔒 Zapisy zamknięte</span>
                     {(isSuperAdmin || iAmLeagueAdmin) && (
-                      <ReopenRegistrationButton leagueId={id} />
+                      hasPairs ? (
+                        <span
+                          className="text-xs bg-gray-700 text-gray-500 rounded px-2 py-0.5 cursor-not-allowed"
+                          title="Pary są wygenerowane — użyj Awaryjnego otwarcia (super admin)"
+                        >
+                          🔓 Otwórz zapisy
+                        </span>
+                      ) : (
+                        <ReopenRegistrationButton leagueId={id} />
+                      )
+                    )}
+                    {isSuperAdmin && hasPairs && (
+                      <EmergencyReopenButton seasonId={currentSeason.id} leagueName={league.name} />
                     )}
                   </>
                 )}
