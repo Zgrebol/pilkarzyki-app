@@ -1,6 +1,8 @@
 import CloseRegistrationButton from './close-registration-button'
 import RosterManagement from './roster-management'
 import MatchdayEditor from './matchday-editor'
+import LineupEditor from './lineup-editor'
+import FillIronLineupsButton from './fill-iron-lineups-button'
 import ReopenRegistrationButton from './reopen-registration-button'
 import CreateTeamButton from './create-team-button'
 import DeleteLeagueButton from './delete-league-button'
@@ -80,6 +82,7 @@ export default async function LeaguePage({ params }: Props) {
   let seasonParticipants: any[] = []
   let rosterByParticipant = new Map<string, any[]>()
   let matchdays: any[] = []
+  let lineupMap = new Map<string, any>()
 
   if (currentSeason?.status === 'locked') {
     const { data: participantsData } = await supabase
@@ -96,6 +99,17 @@ export default async function LeaguePage({ params }: Props) {
       .order('number', { ascending: true })
 
     matchdays = matchdaysData ?? []
+
+    if (matchdays.length > 0 && seasonParticipants.length > 0) {
+      const { data: lineupsData } = await supabase
+        .from('matchday_lineups')
+        .select('matchday_id, season_participant_id, player1_id, player2_id, player3_id, is_iron')
+        .in('matchday_id', matchdays.map((m: any) => m.id))
+
+      for (const l of (lineupsData ?? []) as any[]) {
+        lineupMap.set(`${l.matchday_id}_${l.season_participant_id}`, l)
+      }
+    }
 
     const participantIds = seasonParticipants.map((p: any) => p.id)
     if (participantIds.length > 0) {
@@ -464,22 +478,66 @@ export default async function LeaguePage({ params }: Props) {
         {/* Terminarz — widoczny gdy locked */}
         {currentSeason?.status === 'locked' && (
           <section className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">
-              Terminarz{matchdays.length > 0 && ` (${matchdays.length} kolejek)`}
-            </h2>
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <h2 className="text-xl font-semibold">
+                Terminarz{matchdays.length > 0 && ` (${matchdays.length} kolejek)`}
+              </h2>
+              {canModerate && (
+                <FillIronLineupsButton seasonId={currentSeason!.id} />
+              )}
+            </div>
             {matchdays.length === 0 ? (
               <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
                 Brak kolejek. Aby wygenerować terminarz, otwórz zapisy ponownie i zamknij je jeszcze raz.
               </div>
             ) : (
               <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
-                {matchdays.map((md: any) => (
-                  <MatchdayEditor
-                    key={md.id}
-                    matchday={md}
-                    canEdit={iAmLeagueAdmin || isSuperAdmin}
-                  />
-                ))}
+                {matchdays.map((md: any) => {
+                  const deadline = md.deadline ? new Date(md.deadline) : null
+                  const deadlineNotPassed = !deadline || deadline > new Date()
+                  return (
+                    <div key={md.id}>
+                      <MatchdayEditor
+                        matchday={md}
+                        canEdit={iAmLeagueAdmin || isSuperAdmin}
+                      />
+                      {seasonParticipants.length > 0 && (
+                        <details className="px-5 pb-3">
+                          <summary className="text-xs text-gray-400 cursor-pointer select-none hover:text-gray-300 mb-2">
+                            Trójki meczowe ({seasonParticipants.length})
+                          </summary>
+                          <div className="mt-2 flex flex-col gap-2">
+                            {seasonParticipants.map((p: any) => {
+                              const roster = rosterByParticipant.get(p.id) ?? []
+                              const lineup = lineupMap.get(`${md.id}_${p.id}`) ?? null
+                              const isOwner = p.teams?.owner_id === user?.id
+                              const canEditLineup = canModerate || (isOwner && deadlineNotPassed)
+                              return (
+                                <div key={p.id} className="bg-gray-900 rounded p-3">
+                                  <div className="mb-2">
+                                    <p className="text-sm font-medium">{p.teams?.name ?? '(brak nazwy)'}</p>
+                                    <p className="text-xs text-gray-400">{p.teams?.profiles?.display_name ?? ''}</p>
+                                  </div>
+                                  {roster.length < 3 ? (
+                                    <p className="text-xs text-yellow-500">Skład niekompletny — potrzeba minimum 3 zawodników</p>
+                                  ) : (
+                                    <LineupEditor
+                                      matchdayId={md.id}
+                                      seasonParticipantId={p.id}
+                                      currentLineup={lineup}
+                                      rosterPlayers={roster}
+                                      canEdit={canEditLineup}
+                                    />
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </section>
