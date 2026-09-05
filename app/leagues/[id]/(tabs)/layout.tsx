@@ -11,16 +11,41 @@ import CreateTeamButton from '../create-team-button'
 import FillIronLineupsButton from '../fill-iron-lineups-button'
 import PendingMembersPanel from '../pending-members-panel'
 import EmergencyReopenButton from '../emergency-reopen-button'
+import { Badge } from '@/app/components/ui/Badge'
+import { Card } from '@/app/components/ui/Card'
+import {
+  ShieldCheckIcon,
+  ShieldExclamationIcon,
+  UserIcon,
+  GlobeAltIcon,
+  LockClosedIcon,
+  LockOpenIcon,
+  TrashIcon,
+  PencilIcon,
+  ChevronLeftIcon,
+  ClockIcon,
+  ArrowRightStartOnRectangleIcon,
+} from '@heroicons/react/24/outline'
 
 type Props = {
   params: Promise<{ id: string }>
   children: React.ReactNode
 }
 
-function roleBadge(role: string) {
-  if (role === 'admin') return { label: '👑 admin', cls: 'bg-yellow-600' }
-  if (role === 'mod') return { label: '🛡️ mod', cls: 'bg-blue-600' }
-  return { label: '⚽ gracz', cls: 'bg-gray-700' }
+function roleLabel(role: string): string {
+  if (role === 'admin') return 'admin'
+  if (role === 'mod') return 'mod'
+  return 'gracz'
+}
+
+function RoleBadge({ role }: { role: string }) {
+  if (role === 'admin') {
+    return <Badge variant="admin"><ShieldCheckIcon className="h-3 w-3" /> admin</Badge>
+  }
+  if (role === 'mod') {
+    return <Badge variant="mod"><ShieldExclamationIcon className="h-3 w-3" /> mod</Badge>
+  }
+  return <Badge variant="player"><UserIcon className="h-3 w-3" /> gracz</Badge>
 }
 
 export default async function LeagueLayout({ params, children }: Props) {
@@ -149,36 +174,40 @@ export default async function LeagueLayout({ params, children }: Props) {
 
         {isDeleted && (
           <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
-            <span className="text-sm text-red-200">
-              🗑️ Ta liga jest usunięta. Widzisz ją jako super admin.
+            <span className="text-sm text-red-200 flex items-center gap-2">
+              <TrashIcon className="h-4 w-4 shrink-0" />
+              Ta liga jest usunięta. Widzisz ją jako super admin.
             </span>
             <RestoreLeagueButton leagueId={id} />
           </div>
         )}
 
-        <Link href="/" className="text-sm text-gray-400 hover:text-white mb-4 inline-block">
-          ← Wróć na stronę główną
+        <Link href="/" className="text-sm text-gray-400 hover:text-white mb-4 inline-flex items-center gap-1">
+          <ChevronLeftIcon className="h-4 w-4" /> Wróć na stronę główną
         </Link>
 
         {/* Nagłówek ligi */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+        <Card className="p-6 mb-6">
           <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
             <h1 className="text-3xl font-bold">{league.name}</h1>
             <div className="flex items-center gap-2">
               {(isSuperAdmin || (myMembership?.role === 'admin' && myMembership?.status === 'active')) && (
                 <Link
                   href={`/leagues/${id}/edit`}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 rounded px-3 py-1"
+                  className="text-xs bg-blue-700 hover:bg-blue-600 rounded px-3 py-1 inline-flex items-center gap-1"
                 >
-                  ✏️ Edytuj
+                  <PencilIcon className="h-3.5 w-3.5" /> Edytuj
                 </Link>
               )}
               {isSuperAdmin && !isDeleted && (
                 <DeleteLeagueButton leagueId={id} leagueName={league.name} />
               )}
-              <span className={`text-xs rounded px-2 py-1 ${league.is_public ? 'bg-green-700' : 'bg-gray-700'}`}>
-                {league.is_public ? '🌍 publiczna' : '🔒 prywatna'}
-              </span>
+              <Badge variant={league.is_public ? 'public' : 'private'}>
+                {league.is_public
+                  ? <><GlobeAltIcon className="h-3 w-3" /> publiczna</>
+                  : <><LockClosedIcon className="h-3 w-3" /> prywatna</>
+                }
+              </Badge>
             </div>
           </div>
 
@@ -192,14 +221,17 @@ export default async function LeagueLayout({ params, children }: Props) {
                 <span>Sezon: <span className="text-white">{league.season_name}</span></span>
                 {currentSeason?.status === 'locked' && (
                   <>
-                    <span className="text-xs text-gray-500">🔒 Zapisy zamknięte</span>
+                    <Badge variant="locked">
+                      <LockClosedIcon className="h-3 w-3" /> Zapisy zamknięte
+                    </Badge>
                     {(isSuperAdmin || iAmLeagueAdmin) && (
                       hasPairs ? (
                         <span
                           className="text-xs bg-gray-700 text-gray-500 rounded px-2 py-0.5 cursor-not-allowed"
                           title="Pary są wygenerowane — użyj Awaryjnego otwarcia (super admin)"
                         >
-                          🔓 Otwórz zapisy
+                          <LockOpenIcon className="h-3 w-3 inline mr-0.5" />
+                          Otwórz zapisy
                         </span>
                       ) : (
                         <ReopenRegistrationButton leagueId={id} />
@@ -222,11 +254,9 @@ export default async function LeagueLayout({ params, children }: Props) {
           {myMembership?.status === 'active' ? (
             <div className="mt-4 pt-4 border-t border-gray-700 text-sm">
               <div className="flex justify-between items-center flex-wrap gap-3">
-                <div>
-                  <span className="text-gray-400">Twoja rola w lidze: </span>
-                  <span className={`text-xs rounded px-2 py-1 ${roleBadge(myMembership.role).cls}`}>
-                    {roleBadge(myMembership.role).label}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400">Twoja rola w lidze:</span>
+                  <RoleBadge role={myMembership.role} />
                 </div>
                 <LeaveLeagueButton leagueId={id} mode="active" />
               </div>
@@ -238,19 +268,24 @@ export default async function LeagueLayout({ params, children }: Props) {
             </div>
           ) : isSuperAdmin && !myMembership ? (
             <div className="mt-4 pt-4 border-t border-yellow-700/50 text-sm bg-yellow-900/20 -mx-6 -mb-6 px-6 py-3 rounded-b-lg">
-              🛡️ <span className="text-yellow-400">Wchodzisz jako super admin platformy.</span>
-              <span className="text-gray-400"> Nie jesteś członkiem tej ligi.</span>
+              <span className="flex items-center gap-1.5">
+                <ShieldCheckIcon className="h-4 w-4 text-yellow-400 shrink-0" />
+                <span className="text-yellow-400">Wchodzisz jako super admin platformy.</span>
+                <span className="text-gray-400"> Nie jesteś członkiem tej ligi.</span>
+              </span>
             </div>
           ) : null}
-        </div>
+        </Card>
 
         {/* Panel dołączenia / statusu */}
         {actionPanel && (
-          <div className="bg-gray-800 rounded-lg p-6 mb-6">
+          <Card className="p-6 mb-6">
             {actionPanel === 'guest_join' && (
               isFull ? (
                 <div className="text-center">
-                  <p className="text-gray-400 mb-2">🔒 Brak wolnych miejsc</p>
+                  <p className="text-gray-400 mb-2 flex items-center justify-center gap-1">
+                    <LockClosedIcon className="h-4 w-4" /> Brak wolnych miejsc
+                  </p>
                   <p className="text-xs text-gray-500">Limit zespołów ({league.max_teams}) został osiągnięty.</p>
                 </div>
               ) : (
@@ -260,7 +295,7 @@ export default async function LeagueLayout({ params, children }: Props) {
                   </p>
                   <Link
                     href={`/login?next=${encodeURIComponent(`/leagues/${id}`)}`}
-                    className="inline-block bg-blue-600 hover:bg-blue-700 text-white rounded px-5 py-2"
+                    className="inline-block bg-blue-700 hover:bg-blue-600 text-white rounded px-5 py-2"
                   >
                     Zaloguj się, żeby dołączyć
                   </Link>
@@ -277,7 +312,9 @@ export default async function LeagueLayout({ params, children }: Props) {
             {actionPanel === 'logged_join' && (
               isFull ? (
                 <div className="text-center">
-                  <p className="text-gray-400 mb-2">🔒 Brak wolnych miejsc</p>
+                  <p className="text-gray-400 mb-2 flex items-center justify-center gap-1">
+                    <LockClosedIcon className="h-4 w-4" /> Brak wolnych miejsc
+                  </p>
                   <p className="text-xs text-gray-500">Limit zespołów ({league.max_teams}) został osiągnięty.</p>
                 </div>
               ) : (
@@ -285,7 +322,7 @@ export default async function LeagueLayout({ params, children }: Props) {
                   <p className="text-sm text-gray-400 mb-3">
                     Wolnych miejsc: <span className="text-white">{spotsLeft}</span>
                   </p>
-                  <Link href={`/leagues/${id}/join`} className="inline-block bg-green-600 hover:bg-green-700 text-white rounded px-5 py-2">
+                  <Link href={`/leagues/${id}/join`} className="inline-block bg-green-700 hover:bg-green-600 text-white rounded px-5 py-2">
                     Dołącz do ligi
                   </Link>
                 </div>
@@ -294,7 +331,9 @@ export default async function LeagueLayout({ params, children }: Props) {
 
             {actionPanel === 'pending' && (
               <div className="text-center">
-                <p className="text-yellow-400 mb-1">⏳ Czekasz na akceptację</p>
+                <p className="text-yellow-400 mb-1 flex items-center justify-center gap-1">
+                  <ClockIcon className="h-4 w-4" /> Czekasz na akceptację
+                </p>
                 <p className="text-sm text-gray-400 mb-4">Twoje zgłoszenie do tej ligi jest oczekujące. Moderator wkrótce się tym zajmie.</p>
                 <div className="flex justify-center">
                   <LeaveLeagueButton leagueId={id} mode="pending" />
@@ -304,20 +343,23 @@ export default async function LeagueLayout({ params, children }: Props) {
 
             {actionPanel === 'left' && (
               <div className="text-center">
-                <p className="text-gray-400 mb-1">👋 Opuściłeś tę ligę</p>
+                <p className="text-gray-400 mb-1 flex items-center justify-center gap-1">
+                  <ArrowRightStartOnRectangleIcon className="h-4 w-4" /> Opuściłeś tę ligę
+                </p>
                 <p className="text-sm text-gray-500">Żeby wrócić, admin ligi musi cię zaprosić ponownie.</p>
               </div>
             )}
-          </div>
+          </Card>
         )}
 
         {/* Oczekujące zgłoszenia — dla moderatorów */}
         {canModerate && (
           <section className="mb-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              ⏳ Oczekujące zgłoszenia
+              <ClockIcon className="h-5 w-5 text-yellow-400" />
+              Oczekujące zgłoszenia
               {pendingMembers.length > 0 && (
-                <span className="bg-yellow-600 text-xs rounded px-2 py-0.5">{pendingMembers.length}</span>
+                <Badge variant="warning">{pendingMembers.length}</Badge>
               )}
             </h2>
             <PendingMembersPanel leagueId={id} pendingMembers={pendingMembers} />

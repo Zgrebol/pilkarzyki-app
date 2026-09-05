@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { updateMatchday } from './matchday-actions'
+import { Button } from '@/app/components/ui/Button'
 
 type Matchday = {
   id: string
@@ -37,7 +38,6 @@ function formatDateRange(dateFrom: string | null, dateTo: string | null): string
 
 function toDatetimeLocal(iso: string | null): string {
   if (!iso) return ''
-  // Converts "2027-04-08T15:00:00+00:00" → "2027-04-08T15:00"
   return new Date(iso).toISOString().slice(0, 16)
 }
 
@@ -137,13 +137,9 @@ export default function MatchdayEditor({ matchday, canEdit }: Props) {
             />
           </div>
           <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded px-3 py-1 text-white"
-            >
+            <Button type="submit" disabled={isPending} variant="primary" size="sm">
               {isPending ? 'Zapisuję…' : 'Zapisz'}
-            </button>
+            </Button>
             <button
               type="button"
               onClick={handleCancel}

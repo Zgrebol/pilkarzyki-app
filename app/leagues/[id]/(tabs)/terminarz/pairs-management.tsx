@@ -2,6 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import { generatePairs, regeneratePairs, setParticipantTier } from '../../pairs-actions'
+import { Button } from '@/app/components/ui/Button'
+import { Badge } from '@/app/components/ui/Badge'
+import { Card } from '@/app/components/ui/Card'
+import { BoltIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline'
 
 type Participant = {
   id: string
@@ -74,12 +78,13 @@ export default function PairsManagement({
   const tier2 = participants.filter(p => p.tier === 2)
 
   return (
-    <div className="bg-gray-800 rounded-lg p-5 mb-6">
+    <Card className="p-5 mb-6">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <h3 className="text-base font-semibold">Pary meczowe</h3>
-        <span className={`text-xs px-2 py-0.5 rounded ${hasPairs ? 'bg-green-800 text-green-200' : 'bg-gray-700 text-gray-400'}`}>
-          {hasPairs ? '✓ Wygenerowane' : 'Nie wygenerowane'}
-        </span>
+        <Badge variant={hasPairs ? 'pairs-ok' : 'neutral'}>
+          {hasPairs && <CheckIcon className="h-3 w-3" />}
+          {hasPairs ? 'Wygenerowane' : 'Nie wygenerowane'}
+        </Badge>
       </div>
 
       {/* Podział na poziomy — tylko gdy brak par i użytkownik może generować */}
@@ -154,24 +159,18 @@ export default function PairsManagement({
 
       <div className="flex gap-2 flex-wrap">
         {!hasPairs && canGenerate && (
-          <button
-            onClick={handleGenerate}
-            disabled={isPending}
-            className="text-xs bg-blue-700 hover:bg-blue-600 disabled:opacity-50 rounded px-3 py-1.5 text-white"
-          >
-            {isPending ? 'Generuję…' : '⚡ Generuj pary'}
-          </button>
+          <Button onClick={handleGenerate} disabled={isPending} variant="primary" size="sm">
+            <BoltIcon className="h-3.5 w-3.5" />
+            {isPending ? 'Generuję…' : 'Generuj pary'}
+          </Button>
         )}
         {hasPairs && isSuperAdmin && (
-          <button
-            onClick={handleRegenerate}
-            disabled={isPending}
-            className="text-xs bg-yellow-700 hover:bg-yellow-600 disabled:opacity-50 rounded px-3 py-1.5 text-white"
-          >
-            {isPending ? 'Regeneruję…' : '🔄 Regeneruj pary'}
-          </button>
+          <Button onClick={handleRegenerate} disabled={isPending} variant="secondary" size="sm" className="bg-yellow-700 hover:bg-yellow-600 border-transparent">
+            <ArrowPathIcon className="h-3.5 w-3.5" />
+            {isPending ? 'Regeneruję…' : 'Regeneruj pary'}
+          </Button>
         )}
       </div>
-    </div>
+    </Card>
   )
 }

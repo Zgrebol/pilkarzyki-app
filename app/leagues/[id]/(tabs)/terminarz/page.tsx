@@ -2,6 +2,7 @@ import { createClient } from '../../../../../utils/supabase/server'
 import MatchdayEditor from '../../matchday-editor'
 import LineupEditor from '../../lineup-editor'
 import PairsManagement from './pairs-management'
+import { Card } from '@/app/components/ui/Card'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -39,9 +40,9 @@ export default async function TerminarzPage({ params }: Props) {
 
   if (currentSeason?.status !== 'locked') {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+      <Card className="p-6 text-gray-400 text-sm">
         Terminarz będzie dostępny po zamknięciu zapisów.
-      </div>
+      </Card>
     )
   }
 
@@ -85,7 +86,6 @@ export default async function TerminarzPage({ params }: Props) {
   if (matchdays.length > 0) {
     const matchdayIds = matchdays.map((m: any) => m.id)
 
-    // Pary i pauzy (niezależnie od liczby uczestników)
     const [pairsRes, byesRes] = await Promise.all([
       supabase
         .from('matchday_pairs')
@@ -147,7 +147,7 @@ export default async function TerminarzPage({ params }: Props) {
         Terminarz{matchdays.length > 0 && ` (${matchdays.length} kolejek)`}
       </h2>
 
-      {/* Panel zarządzania parami — widoczny gdy sezon zamknięty i jest co zarządzać */}
+      {/* Panel zarządzania parami */}
       {(canModerate || isSuperAdmin) && (
         <PairsManagement
           seasonId={currentSeason.id}
@@ -160,11 +160,11 @@ export default async function TerminarzPage({ params }: Props) {
       )}
 
       {matchdays.length === 0 ? (
-        <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+        <Card className="p-6 text-gray-400 text-sm">
           Brak kolejek. Aby wygenerować terminarz, otwórz zapisy ponownie i zamknij je jeszcze raz.
-        </div>
+        </Card>
       ) : (
-        <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+        <Card className="divide-y divide-gray-700">
           {matchdays.map((md: any) => {
             const deadline = md.deadline ? new Date(md.deadline) : null
             const deadlineNotPassed = !deadline || deadline > new Date()
@@ -308,7 +308,7 @@ export default async function TerminarzPage({ params }: Props) {
               </div>
             )
           })}
-        </div>
+        </Card>
       )}
     </section>
   )

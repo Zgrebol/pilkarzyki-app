@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { addRosterPlayer, updateRosterPlayer, deleteRosterPlayer } from './roster-actions'
+import { Button } from '@/app/components/ui/Button'
 
 type RosterPlayer = {
   id: string
@@ -79,12 +80,9 @@ export default function RosterManagement({ leagueId: _leagueId, seasonParticipan
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-xs bg-blue-700 hover:bg-blue-600 rounded px-3 py-1 text-white"
-      >
+      <Button onClick={() => setOpen(true)} variant="primary" size="sm">
         Zarządzaj składem ({count}/9)
-      </button>
+      </Button>
     )
   }
 
@@ -117,13 +115,9 @@ export default function RosterManagement({ leagueId: _leagueId, seasonParticipan
                         <form onSubmit={e => handleUpdate(e, player.id)} className="flex flex-col gap-2">
                           <PlayerFormFields form={editForm} onChange={setEditForm} disabled={isPending} formId={player.id} />
                           <div className="flex gap-2">
-                            <button
-                              type="submit"
-                              disabled={isPending}
-                              className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded px-3 py-1 text-white"
-                            >
+                            <Button type="submit" disabled={isPending} variant="primary" size="sm">
                               {isPending ? 'Zapisuję…' : 'Zapisz'}
-                            </button>
+                            </Button>
                             <button
                               type="button"
                               onClick={() => setEditingId(null)}
@@ -171,17 +165,13 @@ export default function RosterManagement({ leagueId: _leagueId, seasonParticipan
           <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">Dodaj zawodnika</p>
           <form onSubmit={handleAdd} className="flex flex-col gap-2">
             <PlayerFormFields form={addForm} onChange={setAddForm} disabled={isPending} formId="add" />
-            <button
-              type="submit"
-              disabled={isPending}
-              className="text-xs bg-green-700 hover:bg-green-600 disabled:opacity-50 rounded px-3 py-1 text-white self-start"
-            >
+            <Button type="submit" disabled={isPending} variant="secondary" size="sm" className="self-start">
               {isPending ? 'Dodaję…' : 'Dodaj zawodnika'}
-            </button>
+            </Button>
           </form>
         </div>
       ) : (
-        <p className="text-xs text-green-400">✓ Skład kompletny (9/9)</p>
+        <p className="text-xs text-green-400 flex items-center gap-1">✓ Skład kompletny (9/9)</p>
       )}
 
       {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
@@ -234,31 +224,23 @@ function PlayerFormFields({
           className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-sm text-white flex-1 disabled:opacity-50"
         />
       </div>
-      <div className="flex gap-4 text-sm">
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="radio"
-            name={`position-${formId}`}
-            value="napastnik"
-            checked={form.position === 'napastnik'}
-            onChange={() => onChange({ ...form, position: 'napastnik' })}
+      {/* Segmented button: Napastnik / Pomocnik */}
+      <div className="flex rounded overflow-hidden border border-gray-600 w-fit" role="group" aria-label="Pozycja">
+        {(['napastnik', 'pomocnik'] as const).map(pos => (
+          <button
+            key={pos}
+            type="button"
             disabled={disabled}
-            className="disabled:opacity-50"
-          />
-          <span className="text-gray-300">Napastnik</span>
-        </label>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="radio"
-            name={`position-${formId}`}
-            value="pomocnik"
-            checked={form.position === 'pomocnik'}
-            onChange={() => onChange({ ...form, position: 'pomocnik' })}
-            disabled={disabled}
-            className="disabled:opacity-50"
-          />
-          <span className="text-gray-300">Pomocnik</span>
-        </label>
+            onClick={() => onChange({ ...form, position: pos })}
+            className={`text-xs px-3 py-1 transition-colors disabled:opacity-50 ${
+              form.position === pos
+                ? 'bg-blue-700 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            {pos === 'napastnik' ? 'Napastnik' : 'Pomocnik'}
+          </button>
+        ))}
       </div>
     </>
   )

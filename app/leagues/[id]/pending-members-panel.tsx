@@ -2,6 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { approveMember, rejectMember } from './moderation-actions'
+import { Button } from '@/app/components/ui/Button'
+import { Card } from '@/app/components/ui/Card'
+import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 type PendingMember = {
   id: string
@@ -16,7 +19,6 @@ type Props = {
 }
 
 export default function PendingMembersPanel({ leagueId, pendingMembers }: Props) {
-  // Stan per-wiersz: który member jest właśnie przetwarzany, czy w trakcie + ewentualny błąd
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [errorByMember, setErrorByMember] = useState<Record<string, string>>({})
   const [, startTransition] = useTransition()
@@ -31,7 +33,6 @@ export default function PendingMembersPanel({ leagueId, pendingMembers }: Props)
       if (res?.error) {
         setErrorByMember(prev => ({ ...prev, [memberId]: res.error }))
       }
-      // Po sukcesie revalidatePath odświeży stronę — wiersz zniknie z listy
     })
   }
 
@@ -53,14 +54,14 @@ export default function PendingMembersPanel({ leagueId, pendingMembers }: Props)
 
   if (pendingMembers.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+      <Card className="p-6 text-gray-400 text-sm">
         Brak oczekujących zgłoszeń.
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+    <Card className="divide-y divide-gray-700">
       {pendingMembers.map(member => {
         const isProcessing = processingId === member.id
         const errorMsg = errorByMember[member.id]
@@ -79,20 +80,24 @@ export default function PendingMembersPanel({ leagueId, pendingMembers }: Props)
                 <p className="text-xs text-gray-500 mt-1">Zgłoszono: {joinedDate}</p>
               </div>
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => handleApprove(member.id)}
                   disabled={isProcessing}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm rounded px-3 py-2"
+                  variant="primary"
+                  size="md"
                 >
-                  {isProcessing ? 'Akceptuję…' : '✓ Akceptuj'}
-                </button>
-                <button
+                  <CheckIcon className="h-4 w-4" />
+                  {isProcessing ? 'Akceptuję…' : 'Akceptuj'}
+                </Button>
+                <Button
                   onClick={() => handleReject(member.id, member.display_name)}
                   disabled={isProcessing}
-                  className="bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm rounded px-3 py-2"
+                  variant="danger"
+                  size="md"
                 >
-                  ✕ Odrzuć
-                </button>
+                  <XMarkIcon className="h-4 w-4" />
+                  Odrzuć
+                </Button>
               </div>
             </div>
             {errorMsg && (
@@ -101,6 +106,6 @@ export default function PendingMembersPanel({ leagueId, pendingMembers }: Props)
           </div>
         )
       })}
-    </div>
+    </Card>
   )
 }

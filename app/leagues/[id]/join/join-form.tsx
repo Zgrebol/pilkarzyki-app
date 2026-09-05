@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { joinLeague } from './actions'
+import { Button } from '@/app/components/ui/Button'
 
 type Props = {
   leagueId: string
@@ -19,8 +20,6 @@ export default function JoinForm({ leagueId, leagueName }: Props) {
 
     startTransition(async () => {
       const res = await joinLeague(leagueId, fd)
-      // Po sukcesie Server Action robi redirect — kod tu nie wraca.
-      // Jeśli wrócił, znaczy że był błąd.
       if (res?.error) {
         setError(res.error)
       }
@@ -50,13 +49,9 @@ export default function JoinForm({ leagueId, leagueName }: Props) {
         </span>
       </label>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded px-4 py-2"
-      >
+      <Button type="submit" disabled={pending} variant="secondary" size="md" className="justify-center">
         {pending ? 'Wysyłam zgłoszenie…' : 'Zgłoś chęć dołączenia'}
-      </button>
+      </Button>
 
       {error && (
         <p className="text-sm text-red-400">{error}</p>

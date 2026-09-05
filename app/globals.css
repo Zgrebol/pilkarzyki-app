@@ -3,6 +3,30 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Surfaces */
+  --surface-base:   #030712;
+  --surface-card:   #1f2937;
+  --surface-raised: #111827;
+  --surface-subtle: #374151;
+
+  /* Text */
+  --text-primary:   #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted:     #6b7280;
+
+  /* Brand */
+  --brand-blue:       #2563eb;
+  --brand-blue-hover: #1d4ed8;
+  --brand-green:      #16a34a;
+  --brand-green-hover:#15803d;
+  --brand-red:        #dc2626;
+  --brand-red-hover:  #b91c1c;
+  --brand-yellow:     #ca8a04;
+
+  /* Border */
+  --border-default: #374151;
+  --border-subtle:  #1f2937;
 }
 
 @theme inline {

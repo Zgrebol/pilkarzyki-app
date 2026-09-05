@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteLeague } from './league-actions'
+import { Button } from '@/app/components/ui/Button'
+import { TrashIcon } from '@heroicons/react/24/outline'
 
 export default function DeleteLeagueButton({
   leagueId,
@@ -25,18 +27,15 @@ export default function DeleteLeagueButton({
       if (res?.error) {
         alert(`Błąd: ${res.error}`)
       } else {
-        router.push('/') // po usunięciu wracamy na home — strona ligi dałaby 404
+        router.push('/')
       }
     })
   }
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={isPending}
-      className="text-xs bg-red-600/80 hover:bg-red-600 disabled:opacity-50 rounded px-3 py-1"
-    >
-      🗑️ {isPending ? 'Usuwanie…' : 'Usuń'}
-    </button>
+    <Button onClick={handleDelete} disabled={isPending} variant="danger" size="sm">
+      <TrashIcon className="h-3.5 w-3.5" />
+      {isPending ? 'Usuwanie…' : 'Usuń'}
+    </Button>
   )
 }

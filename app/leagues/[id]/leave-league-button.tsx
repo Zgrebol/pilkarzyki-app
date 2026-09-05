@@ -2,6 +2,7 @@
 
 import { useTransition, useState } from 'react'
 import { leaveLeague } from './leave-league-actions'
+import { Button } from '@/app/components/ui/Button'
 
 type Props = {
   leagueId: string
@@ -29,20 +30,15 @@ export default function LeaveLeagueButton({ leagueId, mode }: Props) {
 
   return (
     <div>
-      <button
+      <Button
         onClick={handleClick}
         disabled={isPending}
-        className={`text-sm rounded px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-          isActive 
-            ? 'bg-red-600 hover:bg-red-700 text-white' 
-            : 'bg-gray-600 hover:bg-gray-700 text-white'
-        }`}
+        variant={isActive ? 'danger' : 'secondary'}
+        size="md"
       >
         {isPending ? '…' : label}
-      </button>
-      {error && (
-        <p className="text-sm text-red-400 mt-2">{error}</p>
-      )}
+      </Button>
+      {error && <p className="text-sm text-red-400 mt-2">{error}</p>}
     </div>
   )
 }

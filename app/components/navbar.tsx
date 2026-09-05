@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { signOut } from '@/app/auth/actions'
+import { Button } from '@/app/components/ui/Button'
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -29,26 +30,26 @@ export default async function Navbar() {
         <div className="flex items-center gap-4 text-sm">
           {user ? (
             <>
-              <Link href="/profile" className="rounded border border-gray-600 px-2 py-0.5 text-gray-300 hover:border-gray-400 hover:text-white">
+              <Link
+                href="/profile"
+                className="rounded border border-gray-600 px-2 py-0.5 text-gray-300 hover:border-gray-400 hover:text-white text-sm"
+              >
                 {label}
               </Link>
               <form action={signOut}>
-                <button
-                  type="submit"
-                  className="rounded border border-red-700 px-3 py-1 text-red-400 hover:bg-red-900/30 hover:text-red-300"
-                >
+                <Button type="submit" variant="ghost" size="sm">
                   Wyloguj
-                </button>
+                </Button>
               </form>
             </>
           ) : (
             <>
-              <Link href="/login" className="text-gray-300 hover:text-white">
+              <Link href="/login" className="text-gray-300 hover:text-white text-sm">
                 Zaloguj
               </Link>
               <Link
                 href="/signup"
-                className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-500"
+                className="rounded bg-blue-700 hover:bg-blue-600 px-3 py-1 text-white text-sm"
               >
                 Rejestracja
               </Link>

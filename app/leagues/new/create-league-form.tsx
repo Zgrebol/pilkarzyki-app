@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createLeague } from './actions'
+import { Button } from '@/app/components/ui/Button'
 
 export default function CreateLeagueForm() {
   const [error, setError] = useState<string | null>(null)
@@ -14,7 +15,6 @@ export default function CreateLeagueForm() {
 
     startTransition(async () => {
       const res = await createLeague(fd)
-      // Jeśli akcja zwróciła błąd — pokazujemy. Jeśli redirect — kod tu już nie wraca.
       if (res?.error) {
         setError(res.error)
       }
@@ -85,13 +85,9 @@ export default function CreateLeagueForm() {
         <span className="text-sm">Liga publiczna (każdy może zgłosić chęć dołączenia)</span>
       </label>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded px-4 py-2 mt-2"
-      >
+      <Button type="submit" disabled={pending} variant="secondary" size="md" className="mt-2 justify-center">
         {pending ? 'Tworzę ligę…' : 'Stwórz ligę'}
-      </button>
+      </Button>
 
       {error && (
         <p className="text-sm text-red-400">{error}</p>

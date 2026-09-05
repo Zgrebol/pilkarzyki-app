@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { reopenRegistration } from './season-actions'
+import { Button } from '@/app/components/ui/Button'
+import { LockOpenIcon } from '@heroicons/react/24/outline'
 
 export default function ReopenRegistrationButton({ leagueId }: { leagueId: string }) {
   const [isPending, startTransition] = useTransition()
@@ -18,13 +20,10 @@ export default function ReopenRegistrationButton({ leagueId }: { leagueId: strin
 
   return (
     <span className="flex flex-col items-start gap-1">
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className="text-xs bg-green-700 hover:bg-green-600 disabled:opacity-50 rounded px-2 py-0.5 text-white"
-      >
-        🔓 {isPending ? 'Otwieram…' : 'Otwórz zapisy'}
-      </button>
+      <Button onClick={handleClick} disabled={isPending} variant="secondary" size="sm">
+        <LockOpenIcon className="h-3.5 w-3.5" />
+        {isPending ? 'Otwieram…' : 'Otwórz zapisy'}
+      </Button>
       {error && <span className="text-xs text-red-400">{error}</span>}
     </span>
   )

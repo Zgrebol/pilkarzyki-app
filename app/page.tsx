@@ -1,14 +1,30 @@
 import Link from 'next/link'
 import { createClient } from '../utils/supabase/server'
+import { Badge } from '@/app/components/ui/Badge'
+import { Card } from '@/app/components/ui/Card'
+import {
+  ShieldCheckIcon,
+  ShieldExclamationIcon,
+  UserIcon,
+} from '@heroicons/react/24/outline'
+
+function RoleBadge({ role }: { role: string }) {
+  if (role === 'admin') {
+    return <Badge variant="admin"><ShieldCheckIcon className="h-3 w-3" /> admin</Badge>
+  }
+  if (role === 'mod') {
+    return <Badge variant="mod"><ShieldExclamationIcon className="h-3 w-3" /> mod</Badge>
+  }
+  return <Badge variant="player"><UserIcon className="h-3 w-3" /> gracz</Badge>
+}
 
 export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Ligi usera (tylko jeśli zalogowany)
   let myLeagues: { id: string; name: string; description: string | null; season_name: string | null; role: string }[] = []
 
-   if (user) {
+  if (user) {
     const { data } = await supabase
       .from('league_members')
       .select('role, leagues(id, name, description, season_name, status)')
@@ -21,7 +37,6 @@ export default async function Home() {
     )
   }
 
-  // Ligi publiczne (dla wszystkich)
   const { data: publicLeagues } = await supabase
     .from('leagues')
     .select('id, name, description, season_name, max_teams')
@@ -36,19 +51,17 @@ export default async function Home() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-4xl mx-auto px-4 py-12">
 
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-2">Piłkarzyki</h1>
           <p className="text-lg text-gray-400">Platforma fantasy ligi piłkarskiej</p>
         </div>
 
-        {/* Pasek akcji */}
         <div className="flex justify-center mb-12">
           {user ? (
             <div className="flex gap-3 items-center justify-center">
               <Link
                 href="/leagues/new"
-                className="bg-green-600 hover:bg-green-700 text-white text-sm rounded px-4 py-2"
+                className="bg-gray-700 hover:bg-gray-600 text-white text-sm rounded px-4 py-2"
               >
                 + Stwórz ligę
               </Link>
@@ -57,13 +70,13 @@ export default async function Home() {
             <div className="flex gap-3">
               <Link
                 href="/login"
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded px-5 py-2"
+                className="bg-blue-700 hover:bg-blue-600 text-white rounded px-5 py-2 text-sm"
               >
                 Zaloguj się
               </Link>
               <Link
                 href="/signup"
-                className="bg-gray-700 hover:bg-gray-600 text-white rounded px-5 py-2"
+                className="bg-gray-700 hover:bg-gray-600 text-white rounded px-5 py-2 text-sm"
               >
                 Zarejestruj się
               </Link>
@@ -71,40 +84,37 @@ export default async function Home() {
           )}
         </div>
 
-        {/* Sekcja: Twoje ligi */}
         {user && (
           <section className="mb-12">
             <h2 className="text-2xl font-semibold mb-4">Twoje ligi</h2>
             {myLeagues.length === 0 ? (
-              <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+              <Card className="p-6 text-gray-400 text-sm">
                 Nie należysz jeszcze do żadnej ligi.{' '}
                 <Link href="/leagues/new" className="text-green-400 hover:underline">
                   Stwórz swoją pierwszą
                 </Link>
                 {' '}lub dołącz do publicznej poniżej.
-              </div>
+              </Card>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
                 {myLeagues.map(league => (
                   <Link
                     key={league.id}
                     href={`/leagues/${league.id}`}
-                    className="bg-gray-800 hover:bg-gray-700 rounded-lg p-5 transition"
+                    className="block"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold">{league.name}</h3>
-                      <span className="text-xs bg-gray-700 rounded px-2 py-0.5">
-                        {league.role === 'admin' ? '👑 admin' :
-                         league.role === 'mod' ? '🛡️ mod' :
-                         '⚽ gracz'}
-                      </span>
-                    </div>
-                    {league.description && (
-                      <p className="text-sm text-gray-400 mb-2 line-clamp-2">{league.description}</p>
-                    )}
-                    {league.season_name && (
-                      <p className="text-xs text-gray-500">Sezon {league.season_name}</p>
-                    )}
+                    <Card className="p-5 hover:bg-gray-700 transition">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold">{league.name}</h3>
+                        <RoleBadge role={league.role} />
+                      </div>
+                      {league.description && (
+                        <p className="text-sm text-gray-400 mb-2 line-clamp-2">{league.description}</p>
+                      )}
+                      {league.season_name && (
+                        <p className="text-xs text-gray-500">Sezon {league.season_name}</p>
+                      )}
+                    </Card>
                   </Link>
                 ))}
               </div>
@@ -112,33 +122,34 @@ export default async function Home() {
           </section>
         )}
 
-        {/* Sekcja: Ligi publiczne */}
         <section>
           <h2 className="text-2xl font-semibold mb-4">
             {user ? 'Inne ligi publiczne' : 'Ligi publiczne'}
           </h2>
           {otherPublicLeagues.length === 0 ? (
-            <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+            <Card className="p-6 text-gray-400 text-sm">
               {user
                 ? 'Brak innych publicznych lig poza Twoimi.'
                 : 'Nie ma jeszcze żadnych publicznych lig na platformie.'}
-            </div>
+            </Card>
           ) : (
             <div className="grid sm:grid-cols-2 gap-3">
               {otherPublicLeagues.map(league => (
                 <Link
                   key={league.id}
                   href={`/leagues/${league.id}`}
-                  className="bg-gray-800 hover:bg-gray-700 rounded-lg p-5 transition"
+                  className="block"
                 >
-                  <h3 className="font-semibold mb-2">{league.name}</h3>
-                  {league.description && (
-                    <p className="text-sm text-gray-400 mb-2 line-clamp-2">{league.description}</p>
-                  )}
-                  <div className="flex gap-3 text-xs text-gray-500">
-                    {league.season_name && <span>Sezon {league.season_name}</span>}
-                    <span>Limit: {league.max_teams}</span>
-                  </div>
+                  <Card className="p-5 hover:bg-gray-700 transition">
+                    <h3 className="font-semibold mb-2">{league.name}</h3>
+                    {league.description && (
+                      <p className="text-sm text-gray-400 mb-2 line-clamp-2">{league.description}</p>
+                    )}
+                    <div className="flex gap-3 text-xs text-gray-500">
+                      {league.season_name && <span>Sezon {league.season_name}</span>}
+                      <span>Limit: {league.max_teams}</span>
+                    </div>
+                  </Card>
                 </Link>
               ))}
             </div>

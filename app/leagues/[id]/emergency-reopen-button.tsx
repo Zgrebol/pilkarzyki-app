@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { emergencyReopen } from './pairs-actions'
+import { Button } from '@/app/components/ui/Button'
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 type Props = {
   seasonId: string
@@ -26,14 +28,10 @@ export default function EmergencyReopenButton({ seasonId, leagueName }: Props) {
 
   return (
     <span className="flex flex-col items-start gap-1">
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className="text-xs bg-red-800 hover:bg-red-700 disabled:opacity-50 rounded px-2 py-0.5 text-white"
-        title="Kasuje cały sezon i otwiera zapisy od nowa. Tylko super admin."
-      >
-        🚨 {isPending ? 'Otwieram…' : 'Awaryjne otwarcie'}
-      </button>
+      <Button onClick={handleClick} disabled={isPending} variant="danger" size="sm">
+        <ExclamationTriangleIcon className="h-3.5 w-3.5" />
+        {isPending ? 'Otwieram…' : 'Awaryjne otwarcie'}
+      </Button>
       {error && <span className="text-xs text-red-400">{error}</span>}
     </span>
   )

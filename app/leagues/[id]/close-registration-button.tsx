@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { closeRegistration } from './season-actions'
+import { Button } from '@/app/components/ui/Button'
+import { LockClosedIcon } from '@heroicons/react/24/outline'
 
 export default function CloseRegistrationButton({ leagueId }: { leagueId: string }) {
   const [isPending, startTransition] = useTransition()
@@ -18,13 +20,10 @@ export default function CloseRegistrationButton({ leagueId }: { leagueId: string
 
   return (
     <span className="flex flex-col items-start gap-1">
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className="text-xs bg-yellow-700 hover:bg-yellow-600 disabled:opacity-50 rounded px-2 py-0.5 text-white"
-      >
-        🔒 {isPending ? 'Zamykam…' : 'Zamknij zapisy'}
-      </button>
+      <Button onClick={handleClick} disabled={isPending} variant="secondary" size="sm">
+        <LockClosedIcon className="h-3.5 w-3.5" />
+        {isPending ? 'Zamykam…' : 'Zamknij zapisy'}
+      </Button>
       {error && <span className="text-xs text-red-400">{error}</span>}
     </span>
   )

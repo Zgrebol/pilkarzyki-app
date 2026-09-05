@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { setLineup } from './lineup-actions'
+import { Button } from '@/app/components/ui/Button'
+import { PencilIcon } from '@heroicons/react/24/outline'
 
 type RosterPlayer = {
   id: string
@@ -112,7 +114,7 @@ export default function LineupEditor({
   }
 
   if (!editing) {
-    // Tryb kompaktowy: imiona inline, przycisk ✏️
+    // Tryb kompaktowy: imiona inline, przycisk ołówek
     if (compact) {
       if (currentLineup) {
         const playerIds = (
@@ -128,16 +130,16 @@ export default function LineupEditor({
                 <em className="text-gray-500 text-xs ml-1 not-italic">(niekompletna)</em>
               )}
               {currentLineup.is_iron && !isIncomplete && (
-                <span className="text-gray-600 text-xs ml-1">🤖</span>
+                <span className="text-gray-600 text-xs ml-1" title="auto-wypełniona">⚙</span>
               )}
             </span>
             {canEdit && (
               <button
                 onClick={handleEdit}
-                className="text-xs text-blue-500 hover:text-blue-300 shrink-0 ml-0.5"
+                className="text-blue-500 hover:text-blue-300 shrink-0 ml-0.5"
                 title="Edytuj trójkę meczową"
               >
-                ✏️
+                <PencilIcon className="h-3 w-3 inline" />
               </button>
             )}
           </span>
@@ -165,10 +167,10 @@ export default function LineupEditor({
       return (
         <div className="flex flex-col gap-1">
           {currentLineup.is_iron && !isIncomplete && (
-            <span className="text-xs text-gray-500">🤖 auto-wypełniona</span>
+            <span className="text-xs text-gray-500">⚙ auto-wypełniona</span>
           )}
           {currentLineup.is_iron && isIncomplete && (
-            <span className="text-xs text-red-400">🤖 auto, niekompletna</span>
+            <span className="text-xs text-red-400">⚙ auto, niekompletna</span>
           )}
           {([currentLineup.player1_id, currentLineup.player2_id, currentLineup.player3_id] as (string | null)[]).map((pid, i) => (
             <p key={i} className={`text-xs ${pid ? 'text-gray-300' : 'text-gray-500'}`}>
@@ -178,9 +180,9 @@ export default function LineupEditor({
           {canEdit && (
             <button
               onClick={handleEdit}
-              className="text-xs text-blue-400 hover:text-blue-300 self-start mt-1"
+              className="text-xs text-blue-400 hover:text-blue-300 self-start mt-1 inline-flex items-center gap-1"
             >
-              Edytuj trójkę
+              <PencilIcon className="h-3 w-3" /> Edytuj trójkę
             </button>
           )}
         </div>
@@ -231,13 +233,9 @@ export default function LineupEditor({
         <p className="text-xs text-orange-400">{clientValidationError}</p>
       )}
       <div className="flex gap-2 items-center">
-        <button
-          type="submit"
-          disabled={isPending || !!clientValidationError}
-          className="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded px-3 py-1 text-white"
-        >
+        <Button type="submit" disabled={isPending || !!clientValidationError} variant="primary" size="sm">
           {isPending ? 'Zapisuję…' : 'Zapisz trójkę'}
-        </button>
+        </Button>
         <button
           type="button"
           onClick={handleCancel}

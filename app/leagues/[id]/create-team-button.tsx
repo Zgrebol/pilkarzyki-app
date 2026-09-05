@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createOwnTeam } from './team-actions'
+import { Button } from '@/app/components/ui/Button'
 
 export default function CreateTeamButton({ leagueId }: { leagueId: string }) {
   const [open, setOpen] = useState(false)
@@ -20,12 +21,9 @@ export default function CreateTeamButton({ leagueId }: { leagueId: string }) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-xs bg-green-700 hover:bg-green-600 rounded px-3 py-1 text-white"
-      >
+      <Button onClick={() => setOpen(true)} variant="secondary" size="sm">
         + Załóż drużynę
-      </button>
+      </Button>
     )
   }
 
@@ -44,13 +42,9 @@ export default function CreateTeamButton({ leagueId }: { leagueId: string }) {
           autoFocus
           className="bg-gray-900 border border-gray-600 rounded px-3 py-1 text-sm text-white flex-1 min-w-[160px] disabled:opacity-50"
         />
-        <button
-          type="submit"
-          disabled={isPending}
-          className="text-xs bg-green-700 hover:bg-green-600 disabled:opacity-50 rounded px-3 py-1 text-white"
-        >
+        <Button type="submit" disabled={isPending} variant="secondary" size="sm">
           {isPending ? 'Tworzę…' : 'Utwórz'}
-        </button>
+        </Button>
         <button
           type="button"
           onClick={() => { setOpen(false); setError(null) }}

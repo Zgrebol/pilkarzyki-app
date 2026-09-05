@@ -1,15 +1,22 @@
 import { createClient } from '../../../../../utils/supabase/server'
 import MemberRoleControls from '../../member-role-controls'
 import RosterManagement from '../../roster-management'
+import { Badge } from '@/app/components/ui/Badge'
+import { Card } from '@/app/components/ui/Card'
+import {
+  ShieldCheckIcon,
+  ShieldExclamationIcon,
+  UserIcon,
+} from '@heroicons/react/24/outline'
 
 type Props = {
   params: Promise<{ id: string }>
 }
 
-function roleBadge(role: string) {
-  if (role === 'admin') return { label: '👑 admin', cls: 'bg-yellow-600' }
-  if (role === 'mod') return { label: '🛡️ mod', cls: 'bg-blue-600' }
-  return { label: '⚽ gracz', cls: 'bg-gray-700' }
+function RoleBadge({ role }: { role: string }) {
+  if (role === 'admin') return <Badge variant="admin"><ShieldCheckIcon className="h-3 w-3" /> admin</Badge>
+  if (role === 'mod') return <Badge variant="mod"><ShieldExclamationIcon className="h-3 w-3" /> mod</Badge>
+  return <Badge variant="player"><UserIcon className="h-3 w-3" /> gracz</Badge>
 }
 
 export default async function CzlonkowiePage({ params }: Props) {
@@ -92,13 +99,12 @@ export default async function CzlonkowiePage({ params }: Props) {
       <section>
         <h2 className="text-xl font-semibold mb-4">Członkowie ({memberCount})</h2>
         {memberCount === 0 ? (
-          <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+          <Card className="p-6 text-gray-400 text-sm">
             W lidze nie ma jeszcze żadnych aktywnych członków.
-          </div>
+          </Card>
         ) : (
-          <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+          <Card className="divide-y divide-gray-700">
             {members!.map((member: any) => {
-              const badge = roleBadge(member.role)
               const name = member.profiles?.display_name ?? '(usunięty profil)'
               const teamName = teamByOwner.get(member.user_id)
               const isMe = member.user_id === user?.id
@@ -116,7 +122,7 @@ export default async function CzlonkowiePage({ params }: Props) {
                     }
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs rounded px-2 py-1 ${badge.cls}`}>{badge.label}</span>
+                    <RoleBadge role={member.role} />
                     {showControls && (
                       <MemberRoleControls
                         leagueId={id}
@@ -129,7 +135,7 @@ export default async function CzlonkowiePage({ params }: Props) {
                 </div>
               )
             })}
-          </div>
+          </Card>
         )}
       </section>
 
@@ -137,11 +143,11 @@ export default async function CzlonkowiePage({ params }: Props) {
         <section className="mt-8">
           <h2 className="text-xl font-semibold mb-4">Uczestnicy sezonu</h2>
           {seasonParticipants.length === 0 ? (
-            <div className="bg-gray-800 rounded-lg p-6 text-gray-400 text-sm">
+            <Card className="p-6 text-gray-400 text-sm">
               Brak drużyn zapisanych do sezonu.
-            </div>
+            </Card>
           ) : (
-            <div className="bg-gray-800 rounded-lg divide-y divide-gray-700">
+            <Card className="divide-y divide-gray-700">
               {seasonParticipants.map((p: any) => {
                 const roster = rosterByParticipant.get(p.id) ?? []
                 return (
@@ -153,9 +159,9 @@ export default async function CzlonkowiePage({ params }: Props) {
                           {p.teams?.profiles?.display_name ?? '(brak właściciela)'}
                         </p>
                       </div>
-                      <span className={`text-xs rounded px-2 py-1 ${roster.length >= 9 ? 'bg-green-700' : 'bg-gray-700'}`}>
+                      <Badge variant={roster.length >= 9 ? 'pairs-ok' : 'neutral'}>
                         {roster.length}/9 zawodników
-                      </span>
+                      </Badge>
                     </div>
                     {roster.length === 0 ? (
                       <p className="text-xs text-gray-500 italic mb-2">Brak zawodników w składzie</p>
@@ -185,7 +191,7 @@ export default async function CzlonkowiePage({ params }: Props) {
                   </div>
                 )
               })}
-            </div>
+            </Card>
           )}
         </section>
       )}

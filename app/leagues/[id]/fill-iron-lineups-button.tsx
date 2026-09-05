@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { fillIronLineups } from './lineup-actions'
+import { Button } from '@/app/components/ui/Button'
+import { BoltIcon } from '@heroicons/react/24/outline'
 
 type Props = {
   seasonId: string
@@ -36,13 +38,10 @@ export default function FillIronLineupsButton({ seasonId }: Props) {
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className="text-xs bg-gray-700 hover:bg-gray-600 disabled:opacity-50 rounded px-3 py-1 text-white"
-      >
-        {isPending ? 'Uzupełniam…' : '⚡ Uzupełnij żelazne trójki'}
-      </button>
+      <Button onClick={handleClick} disabled={isPending} variant="secondary" size="sm">
+        <BoltIcon className="h-3.5 w-3.5" />
+        {isPending ? 'Uzupełniam…' : 'Uzupełnij żelazne trójki'}
+      </Button>
       {message && <span className="text-xs text-green-400">{message}</span>}
       {error && <span className="text-xs text-red-400">{error}</span>}
     </div>
