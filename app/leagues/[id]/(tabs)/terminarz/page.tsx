@@ -37,7 +37,7 @@ function PlayerScoreDisplay({
     <span>
       <span className="text-gray-300">{name}</span>
       {goals > 0 && <span className="text-white font-bold"> {goals}</span>}
-      {og > 0 && <span className="text-orange-400"> ({og} og)</span>}
+      {og > 0 && <span className="text-red-400"> ({og} og)</span>}
     </span>
   )
 }

@@ -189,9 +189,9 @@ function PlayerRow({
       <label className="flex items-center gap-1 text-xs text-gray-500">
         g:
         <input
-          type="number"
-          min={0}
-          max={99}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={entry.goals}
           disabled={disabled}
           onChange={e => onChange('goals', parseInt(e.target.value, 10) || 0)}
@@ -201,9 +201,9 @@ function PlayerRow({
       <label className="flex items-center gap-1 text-xs text-gray-500">
         og:
         <input
-          type="number"
-          min={0}
-          max={99}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={entry.own_goals}
           disabled={disabled}
           onChange={e => onChange('own_goals', parseInt(e.target.value, 10) || 0)}
