@@ -2,10 +2,44 @@ import { createClient } from '../../../../../utils/supabase/server'
 import MatchdayEditor from '../../matchday-editor'
 import LineupEditor from '../../lineup-editor'
 import PairsManagement from './pairs-management'
+import MatchResultsEditor from './match-results-editor'
 import { Card } from '@/app/components/ui/Card'
 
 type Props = {
   params: Promise<{ id: string }>
+}
+
+function calcMatchScore(
+  homeEntries: { goals: number; own_goals: number }[],
+  awayEntries: { goals: number; own_goals: number }[]
+) {
+  const sum = (arr: { goals: number; own_goals: number }[], f: 'goals' | 'own_goals') =>
+    arr.reduce((s, r) => s + r[f], 0)
+  return {
+    home: sum(homeEntries, 'goals') + sum(awayEntries, 'own_goals'),
+    away: sum(awayEntries, 'goals') + sum(homeEntries, 'own_goals'),
+  }
+}
+
+function PlayerScoreDisplay({
+  name,
+  result,
+}: {
+  name: string
+  result: { goals: number; own_goals: number } | undefined
+}) {
+  const goals = result?.goals ?? 0
+  const og = result?.own_goals ?? 0
+  if (goals === 0 && og === 0) {
+    return <span className="text-gray-500">{name}</span>
+  }
+  return (
+    <span>
+      <span className="text-gray-300">{name}</span>
+      {goals > 0 && <span className="text-white font-bold"> {goals}</span>}
+      {og > 0 && <span className="text-orange-400"> ({og} og)</span>}
+    </span>
+  )
 }
 
 export default async function TerminarzPage({ params }: Props) {
@@ -71,9 +105,9 @@ export default async function TerminarzPage({ params }: Props) {
   let rosterByParticipant = new Map<string, any[]>()
   let pairsByMatchday = new Map<string, any[]>()
   let byesByMatchday = new Map<string, any[]>()
+  let resultsByMatchday = new Map<string, any[]>()
   let hasPairs = false
 
-  // Mapa uczestnik_id → {teamName, tier, ownerId}
   const participantMap = new Map<string, { teamName: string; tier: number; ownerId: string | null }>()
   for (const p of seasonParticipants as any[]) {
     participantMap.set(p.id, {
@@ -86,7 +120,7 @@ export default async function TerminarzPage({ params }: Props) {
   if (matchdays.length > 0) {
     const matchdayIds = matchdays.map((m: any) => m.id)
 
-    const [pairsRes, byesRes] = await Promise.all([
+    const [pairsRes, byesRes, resultsRes] = await Promise.all([
       supabase
         .from('matchday_pairs')
         .select('id, matchday_id, tier, home_participant_id, away_participant_id')
@@ -94,6 +128,10 @@ export default async function TerminarzPage({ params }: Props) {
       supabase
         .from('matchday_byes')
         .select('id, matchday_id, tier, participant_id')
+        .in('matchday_id', matchdayIds),
+      supabase
+        .from('match_results')
+        .select('matchday_id, season_participant_id, roster_player_id, goals, own_goals')
         .in('matchday_id', matchdayIds),
     ])
 
@@ -108,6 +146,11 @@ export default async function TerminarzPage({ params }: Props) {
       const list = byesByMatchday.get(bye.matchday_id) ?? []
       list.push(bye)
       byesByMatchday.set(bye.matchday_id, list)
+    }
+    for (const r of (resultsRes.data ?? []) as any[]) {
+      const list = resultsByMatchday.get(r.matchday_id) ?? []
+      list.push(r)
+      resultsByMatchday.set(r.matchday_id, list)
     }
 
     if (seasonParticipants.length > 0) {
@@ -147,7 +190,6 @@ export default async function TerminarzPage({ params }: Props) {
         Terminarz{matchdays.length > 0 && ` (${matchdays.length} kolejek)`}
       </h2>
 
-      {/* Panel zarządzania parami */}
       {(canModerate || isSuperAdmin) && (
         <PairsManagement
           seasonId={currentSeason.id}
@@ -175,6 +217,41 @@ export default async function TerminarzPage({ params }: Props) {
               ...mdByes.map((b: any) => b.tier),
             ]).size > 1
 
+            // Results lookup for this matchday
+            const mdResultsLookup = new Map<string, { goals: number; own_goals: number }>()
+            const mdResultsParticipants = new Set<string>()
+            for (const r of (resultsByMatchday.get(md.id) ?? []) as any[]) {
+              mdResultsLookup.set(r.roster_player_id, { goals: r.goals, own_goals: r.own_goals })
+              mdResultsParticipants.add(r.season_participant_id)
+            }
+
+            // Pairs with resolved players for MatchResultsEditor
+            const editorPairs = mdPairs.map((pair: any) => {
+              const hl = lineupMap.get(`${md.id}_${pair.home_participant_id}`)
+              const al = lineupMap.get(`${md.id}_${pair.away_participant_id}`)
+              if (!hl || !al) return null
+              const hrm = new Map((rosterByParticipant.get(pair.home_participant_id) ?? []).map((p: any) => [p.id, p]))
+              const arm = new Map((rosterByParticipant.get(pair.away_participant_id) ?? []).map((p: any) => [p.id, p]))
+              const hp = [hl.player1_id, hl.player2_id, hl.player3_id]
+                .filter(Boolean)
+                .map((pid: string) => { const p = hrm.get(pid); return p ? { id: p.id as string, full_name: p.full_name as string, participantId: pair.home_participant_id as string } : null })
+                .filter((x): x is { id: string; full_name: string; participantId: string } => x !== null)
+              const ap = [al.player1_id, al.player2_id, al.player3_id]
+                .filter(Boolean)
+                .map((pid: string) => { const p = arm.get(pid); return p ? { id: p.id as string, full_name: p.full_name as string, participantId: pair.away_participant_id as string } : null })
+                .filter((x): x is { id: string; full_name: string; participantId: string } => x !== null)
+              if (hp.length !== 3 || ap.length !== 3) return null
+              return {
+                pairId: pair.id as string,
+                homeParticipantId: pair.home_participant_id as string,
+                homeTeamName: participantMap.get(pair.home_participant_id)?.teamName ?? '?',
+                homePlayers: hp,
+                awayParticipantId: pair.away_participant_id as string,
+                awayTeamName: participantMap.get(pair.away_participant_id)?.teamName ?? '?',
+                awayPlayers: ap,
+              }
+            }).filter((p): p is NonNullable<typeof p> => p !== null)
+
             return (
               <div key={md.id}>
                 <MatchdayEditor
@@ -183,91 +260,145 @@ export default async function TerminarzPage({ params }: Props) {
                 />
 
                 {hasPairs ? (
-                  /* ── NOWY WIDOK: pary z trójkami inline ── */
                   <div className="px-5 pb-4 pt-2 border-t border-gray-700/40">
                     {mdPairs.length === 0 && mdByes.length === 0 ? (
                       <p className="text-xs text-gray-600">Brak meczy w tej kolejce</p>
                     ) : (
-                      <div className="space-y-4">
-                        {[1, 2].map(tier => {
-                          const tp = mdPairs.filter((p: any) => p.tier === tier)
-                          const tb = mdByes.filter((b: any) => b.tier === tier)
-                          if (tp.length === 0 && tb.length === 0) return null
-                          return (
-                            <div key={tier}>
-                              {hasBothTiers && (
-                                <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
-                                  Poziom {tier}
-                                </p>
-                              )}
-                              <div className="space-y-3">
-                                {tp.map((pair: any) => {
-                                  const homeInfo = participantMap.get(pair.home_participant_id)
-                                  const awayInfo = participantMap.get(pair.away_participant_id)
-                                  const homeRoster = rosterByParticipant.get(pair.home_participant_id) ?? []
-                                  const awayRoster = rosterByParticipant.get(pair.away_participant_id) ?? []
-                                  const homeLineup = lineupMap.get(`${md.id}_${pair.home_participant_id}`) ?? null
-                                  const awayLineup = lineupMap.get(`${md.id}_${pair.away_participant_id}`) ?? null
-                                  const isHomeOwner = homeInfo?.ownerId === user?.id
-                                  const isAwayOwner = awayInfo?.ownerId === user?.id
-                                  const canEditHome = canModerate || (!!isHomeOwner && deadlineNotPassed)
-                                  const canEditAway = canModerate || (!!isAwayOwner && deadlineNotPassed)
-
-                                  return (
-                                    <div key={pair.id}>
-                                      {/* Linia 1: nazwy drużyn */}
-                                      <p className="text-sm font-medium text-white">
-                                        {homeInfo?.teamName ?? '?'}
-                                        <span className="text-gray-500 mx-1.5">-</span>
-                                        {awayInfo?.teamName ?? '?'}
-                                      </p>
-                                      {/* Linia 2: trójki w nawiasach */}
-                                      <div className="text-sm text-gray-400 flex flex-wrap items-baseline gap-x-1 mt-0.5">
-                                        <span>[</span>
-                                        {homeRoster.length < 3 ? (
-                                          <span className="text-yellow-600 text-xs">Skład niekompletny</span>
-                                        ) : (
-                                          <LineupEditor
-                                            compact
-                                            matchdayId={md.id}
-                                            seasonParticipantId={pair.home_participant_id}
-                                            currentLineup={homeLineup}
-                                            rosterPlayers={homeRoster}
-                                            canEdit={canEditHome}
-                                          />
-                                        )}
-                                        <span className="text-gray-600 select-none"> — </span>
-                                        {awayRoster.length < 3 ? (
-                                          <span className="text-yellow-600 text-xs">Skład niekompletny</span>
-                                        ) : (
-                                          <LineupEditor
-                                            compact
-                                            matchdayId={md.id}
-                                            seasonParticipantId={pair.away_participant_id}
-                                            currentLineup={awayLineup}
-                                            rosterPlayers={awayRoster}
-                                            canEdit={canEditAway}
-                                          />
-                                        )}
-                                        <span>]</span>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                                {tb.map((bye: any) => (
-                                  <p key={bye.id} className="text-xs text-gray-500">
-                                    (Pauza: {participantMap.get(bye.participant_id)?.teamName ?? '?'})
+                      <>
+                        <div className="space-y-4">
+                          {[1, 2].map(tier => {
+                            const tp = mdPairs.filter((p: any) => p.tier === tier)
+                            const tb = mdByes.filter((b: any) => b.tier === tier)
+                            if (tp.length === 0 && tb.length === 0) return null
+                            return (
+                              <div key={tier}>
+                                {hasBothTiers && (
+                                  <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
+                                    Poziom {tier}
                                   </p>
-                                ))}
+                                )}
+                                <div className="space-y-3">
+                                  {tp.map((pair: any) => {
+                                    const homeInfo = participantMap.get(pair.home_participant_id)
+                                    const awayInfo = participantMap.get(pair.away_participant_id)
+                                    const homeRoster = rosterByParticipant.get(pair.home_participant_id) ?? []
+                                    const awayRoster = rosterByParticipant.get(pair.away_participant_id) ?? []
+                                    const homeLineup = lineupMap.get(`${md.id}_${pair.home_participant_id}`) ?? null
+                                    const awayLineup = lineupMap.get(`${md.id}_${pair.away_participant_id}`) ?? null
+                                    const isHomeOwner = homeInfo?.ownerId === user?.id
+                                    const isAwayOwner = awayInfo?.ownerId === user?.id
+                                    const canEditHome = canModerate || (!!isHomeOwner && deadlineNotPassed)
+                                    const canEditAway = canModerate || (!!isAwayOwner && deadlineNotPassed)
+
+                                    const hasResults = mdResultsParticipants.has(pair.home_participant_id) ||
+                                                       mdResultsParticipants.has(pair.away_participant_id)
+
+                                    const hrm = new Map((homeRoster as any[]).map((p: any) => [p.id, p]))
+                                    const arm = new Map((awayRoster as any[]).map((p: any) => [p.id, p]))
+                                    const homeLineupPlayers = homeLineup
+                                      ? [homeLineup.player1_id, homeLineup.player2_id, homeLineup.player3_id]
+                                          .filter(Boolean).map((id: string) => hrm.get(id)).filter(Boolean) as any[]
+                                      : []
+                                    const awayLineupPlayers = awayLineup
+                                      ? [awayLineup.player1_id, awayLineup.player2_id, awayLineup.player3_id]
+                                          .filter(Boolean).map((id: string) => arm.get(id)).filter(Boolean) as any[]
+                                      : []
+                                    const homeGoalEntries = homeLineupPlayers.map((p: any) => mdResultsLookup.get(p.id) ?? { goals: 0, own_goals: 0 })
+                                    const awayGoalEntries = awayLineupPlayers.map((p: any) => mdResultsLookup.get(p.id) ?? { goals: 0, own_goals: 0 })
+                                    const { home: homeScore, away: awayScore } = calcMatchScore(homeGoalEntries, awayGoalEntries)
+
+                                    return (
+                                      <div key={pair.id}>
+                                        {hasResults ? (
+                                          <>
+                                            <p className="text-sm font-medium text-white">
+                                              {homeInfo?.teamName ?? '?'}
+                                              <span className="text-blue-400 font-bold mx-1.5">{homeScore}</span>
+                                              <span className="text-gray-500">–</span>
+                                              <span className="text-blue-400 font-bold mx-1.5">{awayScore}</span>
+                                              {awayInfo?.teamName ?? '?'}
+                                            </p>
+                                            {homeLineupPlayers.length === 3 && awayLineupPlayers.length === 3 && (
+                                              <div className="text-sm text-gray-400 flex flex-wrap items-baseline gap-x-1 mt-0.5">
+                                                <span>[</span>
+                                                {homeLineupPlayers.map((p: any, i: number) => (
+                                                  <span key={p.id}>
+                                                    <PlayerScoreDisplay name={p.full_name} result={mdResultsLookup.get(p.id)} />
+                                                    {i < 2 && <span className="text-gray-600">,</span>}
+                                                  </span>
+                                                ))}
+                                                <span className="text-gray-600 select-none"> — </span>
+                                                {awayLineupPlayers.map((p: any, i: number) => (
+                                                  <span key={p.id}>
+                                                    <PlayerScoreDisplay name={p.full_name} result={mdResultsLookup.get(p.id)} />
+                                                    {i < 2 && <span className="text-gray-600">,</span>}
+                                                  </span>
+                                                ))}
+                                                <span>]</span>
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <>
+                                            <p className="text-sm font-medium text-white">
+                                              {homeInfo?.teamName ?? '?'}
+                                              <span className="text-gray-500 mx-1.5">-</span>
+                                              {awayInfo?.teamName ?? '?'}
+                                            </p>
+                                            <div className="text-sm text-gray-400 flex flex-wrap items-baseline gap-x-1 mt-0.5">
+                                              <span>[</span>
+                                              {homeRoster.length < 3 ? (
+                                                <span className="text-yellow-600 text-xs">Skład niekompletny</span>
+                                              ) : (
+                                                <LineupEditor
+                                                  compact
+                                                  matchdayId={md.id}
+                                                  seasonParticipantId={pair.home_participant_id}
+                                                  currentLineup={homeLineup}
+                                                  rosterPlayers={homeRoster}
+                                                  canEdit={canEditHome}
+                                                />
+                                              )}
+                                              <span className="text-gray-600 select-none"> — </span>
+                                              {awayRoster.length < 3 ? (
+                                                <span className="text-yellow-600 text-xs">Skład niekompletny</span>
+                                              ) : (
+                                                <LineupEditor
+                                                  compact
+                                                  matchdayId={md.id}
+                                                  seasonParticipantId={pair.away_participant_id}
+                                                  currentLineup={awayLineup}
+                                                  rosterPlayers={awayRoster}
+                                                  canEdit={canEditAway}
+                                                />
+                                              )}
+                                              <span>]</span>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                  {tb.map((bye: any) => (
+                                    <p key={bye.id} className="text-xs text-gray-500">
+                                      (Pauza: {participantMap.get(bye.participant_id)?.teamName ?? '?'})
+                                    </p>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                            )
+                          })}
+                        </div>
+                        <MatchResultsEditor
+                          matchdayId={md.id}
+                          pairs={editorPairs}
+                          existingResults={resultsByMatchday.get(md.id) ?? []}
+                          canEdit={canModerate}
+                        />
+                      </>
                     )}
                   </div>
                 ) : (
-                  /* ── FALLBACK: stary widok gdy pary nie istnieją ── */
                   seasonParticipants.length > 0 && (
                     <details className="px-5 pb-3">
                       <summary className="text-xs text-gray-400 cursor-pointer select-none hover:text-gray-300 mb-2">
