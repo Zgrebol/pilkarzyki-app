@@ -107,7 +107,7 @@ export default async function EdytujTerminarzPage({ params }: Props) {
         .in('matchday_id', matchdayIds),
       supabase
         .from('match_results')
-        .select('matchday_id, season_participant_id, roster_player_id, goals, own_goals')
+        .select('matchday_id, season_participant_id, roster_player_id, goals, own_goals, match_finished')
         .in('matchday_id', matchdayIds),
     ])
 

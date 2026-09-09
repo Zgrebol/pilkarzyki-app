@@ -39,6 +39,7 @@ type ResultInput = {
   season_participant_id: string
   goals: number
   own_goals: number
+  match_finished: boolean
 }
 
 export async function setMatchResults(
@@ -74,6 +75,7 @@ export async function setMatchResults(
     roster_player_id: r.roster_player_id,
     goals: r.goals,
     own_goals: r.own_goals,
+    match_finished: r.match_finished,
     updated_at: now,
   }))
 

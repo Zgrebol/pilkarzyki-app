@@ -145,8 +145,14 @@ export default async function LeagueMainPage({ params }: Props) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/50">
-              {standings.map(row => (
-                <tr key={row.participant_id} className="hover:bg-gray-800/30 transition-colors">
+              {standings.map(row => {
+                const bg = row.position <= 4
+                  ? 'bg-green-900/20 hover:bg-green-900/30'
+                  : total >= 5 && row.position > total - 4
+                    ? 'bg-red-900/20 hover:bg-red-900/30'
+                    : 'hover:bg-gray-800/30'
+                return (
+                <tr key={row.participant_id} className={`transition-colors ${bg}`}>
                   <td className="text-right px-3 py-2.5 text-gray-400 tabular-nums">
                     <div className="flex items-center justify-end gap-1.5">
                       {row.is_manual && (
@@ -176,7 +182,8 @@ export default async function LeagueMainPage({ params }: Props) {
                     </td>
                   )}
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

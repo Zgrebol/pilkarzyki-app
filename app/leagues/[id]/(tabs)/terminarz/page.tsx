@@ -31,17 +31,32 @@ function PlayerScoreDisplay({
   result,
 }: {
   name: string
-  result: { goals: number; own_goals: number } | undefined
+  result: { goals: number; own_goals: number; match_finished: boolean } | undefined
 }) {
   const goals = result?.goals ?? 0
   const og = result?.own_goals ?? 0
-  if (goals === 0 && og === 0) {
-    return <span className="text-gray-500">{name}</span>
+  const finished = result?.match_finished ?? false
+
+  if (goals > 0) {
+    return (
+      <span className="font-bold text-white">
+        {name}
+        <span className="text-blue-400"> {goals}</span>
+        {og > 0 && <span className="text-red-400 font-normal"> ({og} og)</span>}
+      </span>
+    )
+  }
+  if (finished) {
+    return (
+      <span className="text-gray-500 italic">
+        {name}
+        {og > 0 && <span className="text-red-400 not-italic"> ({og} og)</span>}
+      </span>
+    )
   }
   return (
-    <span>
-      <span className="text-gray-300">{name}</span>
-      {goals > 0 && <span className="text-white font-bold"> {goals}</span>}
+    <span className="text-gray-500">
+      {name}
       {og > 0 && <span className="text-red-400"> ({og} og)</span>}
     </span>
   )
@@ -128,7 +143,7 @@ export default async function TerminarzPage({ params }: Props) {
         .in('matchday_id', matchdayIds),
       supabase
         .from('match_results')
-        .select('matchday_id, season_participant_id, roster_player_id, goals, own_goals')
+        .select('matchday_id, season_participant_id, roster_player_id, goals, own_goals, match_finished')
         .in('matchday_id', matchdayIds),
     ])
 
@@ -197,10 +212,10 @@ export default async function TerminarzPage({ params }: Props) {
               ...mdByes.map((b: any) => b.tier),
             ]).size > 1
 
-            const mdResultsLookup = new Map<string, { goals: number; own_goals: number }>()
+            const mdResultsLookup = new Map<string, { goals: number; own_goals: number; match_finished: boolean }>()
             const mdResultsParticipants = new Set<string>()
             for (const r of (resultsByMatchday.get(md.id) ?? []) as any[]) {
-              mdResultsLookup.set(r.roster_player_id, { goals: r.goals, own_goals: r.own_goals })
+              mdResultsLookup.set(r.roster_player_id, { goals: r.goals, own_goals: r.own_goals, match_finished: r.match_finished ?? false })
               mdResultsParticipants.add(r.season_participant_id)
             }
 
@@ -263,11 +278,11 @@ export default async function TerminarzPage({ params }: Props) {
                                     <div key={pair.id}>
                                       {hasResults ? (
                                         <>
-                                          <p className="text-sm font-medium text-white">
+                                          <p className="text-base font-bold text-white">
                                             {homeInfo?.teamName ?? '?'}
-                                            <span className="text-blue-400 font-bold mx-1.5">{homeScore}</span>
-                                            <span className="text-gray-500">–</span>
-                                            <span className="text-blue-400 font-bold mx-1.5">{awayScore}</span>
+                                            <span className="text-blue-400 mx-1.5">{homeScore}</span>
+                                            <span className="text-gray-500 font-normal">–</span>
+                                            <span className="text-blue-400 mx-1.5">{awayScore}</span>
                                             {awayInfo?.teamName ?? '?'}
                                           </p>
                                           {homeLineupPlayers.length === 3 && awayLineupPlayers.length === 3 && (
@@ -292,9 +307,9 @@ export default async function TerminarzPage({ params }: Props) {
                                         </>
                                       ) : (
                                         <>
-                                          <p className="text-sm font-medium text-white">
+                                          <p className="text-base font-bold text-white">
                                             {homeInfo?.teamName ?? '?'}
-                                            <span className="text-gray-500 mx-1.5">-</span>
+                                            <span className="text-gray-500 font-normal mx-1.5">vs</span>
                                             {awayInfo?.teamName ?? '?'}
                                           </p>
                                           <div className="text-sm text-gray-400 flex flex-wrap items-baseline gap-x-1 mt-0.5">

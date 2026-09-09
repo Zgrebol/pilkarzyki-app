@@ -23,6 +23,7 @@ type ExistingResult = {
   season_participant_id: string
   goals: number
   own_goals: number
+  match_finished: boolean
 }
 
 type Props = {
@@ -32,16 +33,16 @@ type Props = {
   canEdit: boolean
 }
 
-type GoalEntry = { goals: number; own_goals: number }
+type PlayerEntry = { goals: number; own_goals: number; match_finished: boolean }
 
 export default function MatchResultsEditor({ matchdayId, pairs, existingResults, canEdit }: Props) {
   const validPairs = pairs.filter(p => p.homePlayers.length === 3 && p.awayPlayers.length === 3)
 
   const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState<Map<string, GoalEntry>>(() => {
-    const m = new Map<string, GoalEntry>()
+  const [form, setForm] = useState<Map<string, PlayerEntry>>(() => {
+    const m = new Map<string, PlayerEntry>()
     for (const r of existingResults) {
-      m.set(r.roster_player_id, { goals: r.goals, own_goals: r.own_goals })
+      m.set(r.roster_player_id, { goals: r.goals, own_goals: r.own_goals, match_finished: r.match_finished })
     }
     return m
   })
@@ -50,15 +51,24 @@ export default function MatchResultsEditor({ matchdayId, pairs, existingResults,
 
   if (!canEdit || validPairs.length === 0) return null
 
-  function getEntry(playerId: string): GoalEntry {
-    return form.get(playerId) ?? { goals: 0, own_goals: 0 }
+  function getEntry(playerId: string): PlayerEntry {
+    return form.get(playerId) ?? { goals: 0, own_goals: 0, match_finished: false }
   }
 
-  function setEntry(playerId: string, field: keyof GoalEntry, value: number) {
+  function setGoal(playerId: string, field: 'goals' | 'own_goals', value: number) {
     setForm(prev => {
       const next = new Map(prev)
-      const cur = next.get(playerId) ?? { goals: 0, own_goals: 0 }
+      const cur = next.get(playerId) ?? { goals: 0, own_goals: 0, match_finished: false }
       next.set(playerId, { ...cur, [field]: Math.max(0, value) })
+      return next
+    })
+  }
+
+  function setFinished(playerId: string, value: boolean) {
+    setForm(prev => {
+      const next = new Map(prev)
+      const cur = next.get(playerId) ?? { goals: 0, own_goals: 0, match_finished: false }
+      next.set(playerId, { ...cur, match_finished: value })
       return next
     })
   }
@@ -74,6 +84,7 @@ export default function MatchResultsEditor({ matchdayId, pairs, existingResults,
           season_participant_id: player.participantId,
           goals: entry.goals,
           own_goals: entry.own_goals,
+          match_finished: entry.match_finished,
         })
       }
     }
@@ -134,7 +145,9 @@ export default function MatchResultsEditor({ matchdayId, pairs, existingResults,
                     name={player.full_name}
                     entry={getEntry(player.id)}
                     disabled={isPending}
-                    onChange={(f, v) => setEntry(player.id, f, v)}
+                    onChangeGoal={v => setGoal(player.id, 'goals', v)}
+                    onChangeOwnGoal={v => setGoal(player.id, 'own_goals', v)}
+                    onChangeFinished={v => setFinished(player.id, v)}
                   />
                 ))}
               </div>
@@ -146,7 +159,9 @@ export default function MatchResultsEditor({ matchdayId, pairs, existingResults,
                     name={player.full_name}
                     entry={getEntry(player.id)}
                     disabled={isPending}
-                    onChange={(f, v) => setEntry(player.id, f, v)}
+                    onChangeGoal={v => setGoal(player.id, 'goals', v)}
+                    onChangeOwnGoal={v => setGoal(player.id, 'own_goals', v)}
+                    onChangeFinished={v => setFinished(player.id, v)}
                   />
                 ))}
               </div>
@@ -169,16 +184,20 @@ function PlayerRow({
   name,
   entry,
   disabled,
-  onChange,
+  onChangeGoal,
+  onChangeOwnGoal,
+  onChangeFinished,
 }: {
   name: string
-  entry: GoalEntry
+  entry: PlayerEntry
   disabled: boolean
-  onChange: (field: keyof GoalEntry, value: number) => void
+  onChangeGoal: (value: number) => void
+  onChangeOwnGoal: (value: number) => void
+  onChangeFinished: (value: boolean) => void
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs text-gray-300 w-40 truncate">{name}</span>
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="text-xs text-gray-300 w-36 truncate">{name}</span>
       <label className="flex items-center gap-1 text-xs text-gray-500">
         g:
         <input
@@ -187,8 +206,8 @@ function PlayerRow({
           pattern="[0-9]*"
           value={entry.goals}
           disabled={disabled}
-          onChange={e => onChange('goals', parseInt(e.target.value, 10) || 0)}
-          className="w-12 bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs text-white text-center disabled:opacity-50"
+          onChange={e => onChangeGoal(parseInt(e.target.value, 10) || 0)}
+          className="w-10 bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs text-white text-center disabled:opacity-50"
         />
       </label>
       <label className="flex items-center gap-1 text-xs text-gray-500">
@@ -199,9 +218,19 @@ function PlayerRow({
           pattern="[0-9]*"
           value={entry.own_goals}
           disabled={disabled}
-          onChange={e => onChange('own_goals', parseInt(e.target.value, 10) || 0)}
-          className="w-12 bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs text-white text-center disabled:opacity-50"
+          onChange={e => onChangeOwnGoal(parseInt(e.target.value, 10) || 0)}
+          className="w-10 bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs text-white text-center disabled:opacity-50"
         />
+      </label>
+      <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={entry.match_finished}
+          disabled={disabled}
+          onChange={e => onChangeFinished(e.target.checked)}
+          className="w-3.5 h-3.5 rounded accent-gray-400 disabled:opacity-50"
+        />
+        mz
       </label>
     </div>
   )
