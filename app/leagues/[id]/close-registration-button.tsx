@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { closeRegistration } from './season-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { LockClosedIcon } from '@heroicons/react/24/outline'
 
 export default function CloseRegistrationButton({ leagueId }: { leagueId: string }) {

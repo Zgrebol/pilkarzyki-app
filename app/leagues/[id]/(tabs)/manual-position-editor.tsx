@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { setManualPosition } from '../table-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 type Props = {
@@ -74,7 +74,7 @@ export default function ManualPositionEditor({ participantId, currentOverride, t
         placeholder="1"
         className="w-12 text-center bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs text-white"
       />
-      <Button onClick={handleSave} variant="primary" size="sm" disabled={isPending || !value}>
+      <Button onClick={handleSave} variant="default" size="sm" disabled={isPending || !value}>
         <CheckIcon className="h-3 w-3" />
         Zapisz
       </Button>

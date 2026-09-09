@@ -1,5 +1,5 @@
 import { createClient } from '../../../../../utils/supabase/server'
-import { Card } from '@/app/components/ui/Card'
+import { Card } from '@/app/components/ui/card'
 import { BoltIcon } from '@heroicons/react/24/outline'
 
 type Props = {

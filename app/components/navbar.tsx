@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { signOut } from '@/app/auth/actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 export default async function Navbar() {
   const supabase = await createClient()

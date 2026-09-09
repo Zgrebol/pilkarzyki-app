@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createOwnTeam } from './team-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 export default function CreateTeamButton({ leagueId }: { leagueId: string }) {
   const [open, setOpen] = useState(false)

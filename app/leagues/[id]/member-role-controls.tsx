@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { changeMemberRole } from './role-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 type Props = {
   leagueId: string
@@ -36,7 +36,7 @@ export default function MemberRoleControls({
           <Button
             onClick={() => run('mod', 'Mianować tego gracza moderatorem ligi?')}
             disabled={isPending}
-            variant="primary"
+            variant="default"
             size="sm"
           >
             Mianuj modem
@@ -68,7 +68,7 @@ export default function MemberRoleControls({
           <Button
             onClick={() => run('player', 'Odebrać temu członkowi rolę admina ligi?')}
             disabled={isPending}
-            variant="danger"
+            variant="destructive"
             size="sm"
           >
             Odbierz admina

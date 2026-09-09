@@ -3,7 +3,7 @@ import MatchdayEditor from '../../matchday-editor'
 import PairsManagement from '../terminarz/pairs-management'
 import MatchResultsEditor from '../terminarz/match-results-editor'
 import FillIronLineupsButton from '../../fill-iron-lineups-button'
-import { Card } from '@/app/components/ui/Card'
+import { Card } from '@/app/components/ui/card'
 import { calcMatchScore } from '@/app/lib/match-score'
 
 type Props = {

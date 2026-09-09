@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { setDraftPosition } from './table-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { CheckIcon } from '@heroicons/react/24/outline'
 
 type Props = {

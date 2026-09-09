@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { reopenRegistration } from './season-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { LockOpenIcon } from '@heroicons/react/24/outline'
 
 export default function ReopenRegistrationButton({ leagueId }: { leagueId: string }) {

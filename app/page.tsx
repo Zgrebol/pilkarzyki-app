@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '../utils/supabase/server'
-import { Badge } from '@/app/components/ui/Badge'
-import { Card } from '@/app/components/ui/Card'
+import { Badge } from '@/app/components/ui/badge'
+import { Card } from '@/app/components/ui/card'
 import {
   ShieldCheckIcon,
   ShieldExclamationIcon,

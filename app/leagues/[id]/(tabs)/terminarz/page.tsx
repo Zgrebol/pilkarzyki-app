@@ -1,6 +1,6 @@
 import { createClient } from '../../../../../utils/supabase/server'
 import LineupEditor from '../../lineup-editor'
-import { Card } from '@/app/components/ui/Card'
+import { Card } from '@/app/components/ui/card'
 import { calcMatchScore } from '@/app/lib/match-score'
 
 type Props = {

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { updateMatchday } from './matchday-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 type Matchday = {
   id: string
@@ -137,7 +137,7 @@ export default function MatchdayEditor({ matchday, canEdit }: Props) {
             />
           </div>
           <div className="flex gap-2">
-            <Button type="submit" disabled={isPending} variant="primary" size="sm">
+            <Button type="submit" disabled={isPending} variant="default" size="sm">
               {isPending ? 'Zapisuję…' : 'Zapisz'}
             </Button>
             <button

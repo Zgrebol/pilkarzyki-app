@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { fillIronLineups } from './lineup-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { BoltIcon } from '@heroicons/react/24/outline'
 
 type Props = {

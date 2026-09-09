@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { setMatchResults } from '../../results-actions'
 import { calcMatchScore } from '@/app/lib/match-score'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 type PlayerInfo = { id: string; full_name: string; participantId: string }
@@ -172,7 +172,7 @@ export default function MatchResultsEditor({ matchdayId, pairs, existingResults,
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <Button onClick={handleSave} variant="primary" size="sm" disabled={isPending}>
+      <Button onClick={handleSave} variant="default" size="sm" disabled={isPending}>
         <CheckIcon className="h-3.5 w-3.5 mr-1" />
         {isPending ? 'Zapisuję…' : 'Zapisz wyniki'}
       </Button>

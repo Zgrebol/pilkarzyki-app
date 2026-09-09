@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { joinLeague } from './actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 type Props = {
   leagueId: string
@@ -49,7 +49,7 @@ export default function JoinForm({ leagueId, leagueName }: Props) {
         </span>
       </label>
 
-      <Button type="submit" disabled={pending} variant="secondary" size="md" className="justify-center">
+      <Button type="submit" disabled={pending} variant="secondary" size="default" className="justify-center">
         {pending ? 'Wysyłam zgłoszenie…' : 'Zgłoś chęć dołączenia'}
       </Button>
 

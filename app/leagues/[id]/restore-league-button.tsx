@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { restoreLeague } from './league-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export default function RestoreLeagueButton({ leagueId }: { leagueId: string }) {

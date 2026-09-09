@@ -1,8 +1,8 @@
 import { createClient } from '../../../../../utils/supabase/server'
 import RosterManagement from '../../roster-management'
 import DraftPositionEditor from '../../draft-position-editor'
-import { Card } from '@/app/components/ui/Card'
-import { Badge } from '@/app/components/ui/Badge'
+import { Card } from '@/app/components/ui/card'
+import { Badge } from '@/app/components/ui/badge'
 
 type Props = {
   params: Promise<{ id: string }>

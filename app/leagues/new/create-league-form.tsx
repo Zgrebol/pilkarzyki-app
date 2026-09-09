@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createLeague } from './actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 export default function CreateLeagueForm() {
   const [error, setError] = useState<string | null>(null)
@@ -85,7 +85,7 @@ export default function CreateLeagueForm() {
         <span className="text-sm">Liga publiczna (każdy może zgłosić chęć dołączenia)</span>
       </label>
 
-      <Button type="submit" disabled={pending} variant="secondary" size="md" className="mt-2 justify-center">
+      <Button type="submit" disabled={pending} variant="secondary" size="default" className="mt-2 justify-center">
         {pending ? 'Tworzę ligę…' : 'Stwórz ligę'}
       </Button>
 

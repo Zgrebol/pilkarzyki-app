@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { addRosterPlayer, updateRosterPlayer, deleteRosterPlayer } from './roster-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 type RosterPlayer = {
   id: string
@@ -80,7 +80,7 @@ export default function RosterManagement({ leagueId: _leagueId, seasonParticipan
 
   if (!open) {
     return (
-      <Button onClick={() => setOpen(true)} variant="primary" size="sm">
+      <Button onClick={() => setOpen(true)} variant="default" size="sm">
         Zarządzaj składem ({count}/9)
       </Button>
     )
@@ -115,7 +115,7 @@ export default function RosterManagement({ leagueId: _leagueId, seasonParticipan
                         <form onSubmit={e => handleUpdate(e, player.id)} className="flex flex-col gap-2">
                           <PlayerFormFields form={editForm} onChange={setEditForm} disabled={isPending} formId={player.id} />
                           <div className="flex gap-2">
-                            <Button type="submit" disabled={isPending} variant="primary" size="sm">
+                            <Button type="submit" disabled={isPending} variant="default" size="sm">
                               {isPending ? 'Zapisuję…' : 'Zapisz'}
                             </Button>
                             <button

@@ -10,8 +10,8 @@ import LeaveLeagueButton from '../leave-league-button'
 import CreateTeamButton from '../create-team-button'
 import PendingMembersPanel from '../pending-members-panel'
 import EmergencyReopenButton from '../emergency-reopen-button'
-import { Badge } from '@/app/components/ui/Badge'
-import { Card } from '@/app/components/ui/Card'
+import { Badge } from '@/app/components/ui/badge'
+import { Card } from '@/app/components/ui/card'
 import {
   ShieldCheckIcon,
   ShieldExclamationIcon,

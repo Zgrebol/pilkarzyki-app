@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { updateLeague } from './actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 
 type Props = {
   leagueId: string
@@ -102,7 +102,7 @@ export default function EditLeagueForm({ leagueId, initialValues, activeCount }:
         <span className="text-sm">Liga publiczna (każdy może zgłosić chęć dołączenia)</span>
       </label>
 
-      <Button type="submit" disabled={pending} variant="primary" size="md" className="mt-2 justify-center">
+      <Button type="submit" disabled={pending} variant="default" size="default" className="mt-2 justify-center">
         {pending ? 'Zapisuję…' : 'Zapisz zmiany'}
       </Button>
 

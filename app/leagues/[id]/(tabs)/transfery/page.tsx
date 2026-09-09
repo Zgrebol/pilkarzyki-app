@@ -1,4 +1,4 @@
-import { Card } from '@/app/components/ui/Card'
+import { Card } from '@/app/components/ui/card'
 import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline'
 
 type Props = {

@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { generatePairs, regeneratePairs, setParticipantTier } from '../../pairs-actions'
-import { Button } from '@/app/components/ui/Button'
-import { Badge } from '@/app/components/ui/Badge'
-import { Card } from '@/app/components/ui/Card'
+import { Button } from '@/app/components/ui/button'
+import { Badge } from '@/app/components/ui/badge'
+import { Card } from '@/app/components/ui/card'
 import { BoltIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline'
 
 type Participant = {
@@ -159,7 +159,7 @@ export default function PairsManagement({
 
       <div className="flex gap-2 flex-wrap">
         {!hasPairs && canGenerate && (
-          <Button onClick={handleGenerate} disabled={isPending} variant="primary" size="sm">
+          <Button onClick={handleGenerate} disabled={isPending} variant="default" size="sm">
             <BoltIcon className="h-3.5 w-3.5" />
             {isPending ? 'Generuję…' : 'Generuj pary'}
           </Button>

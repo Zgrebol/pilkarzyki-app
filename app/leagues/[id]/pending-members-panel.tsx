@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { approveMember, rejectMember } from './moderation-actions'
-import { Button } from '@/app/components/ui/Button'
-import { Card } from '@/app/components/ui/Card'
+import { Button } from '@/app/components/ui/button'
+import { Card } from '@/app/components/ui/card'
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 type PendingMember = {
@@ -83,8 +83,8 @@ export default function PendingMembersPanel({ leagueId, pendingMembers }: Props)
                 <Button
                   onClick={() => handleApprove(member.id)}
                   disabled={isProcessing}
-                  variant="primary"
-                  size="md"
+                  variant="default"
+                  size="default"
                 >
                   <CheckIcon className="h-4 w-4" />
                   {isProcessing ? 'Akceptuję…' : 'Akceptuj'}
@@ -92,8 +92,8 @@ export default function PendingMembersPanel({ leagueId, pendingMembers }: Props)
                 <Button
                   onClick={() => handleReject(member.id, member.display_name)}
                   disabled={isProcessing}
-                  variant="danger"
-                  size="md"
+                  variant="destructive"
+                  size="default"
                 >
                   <XMarkIcon className="h-4 w-4" />
                   Odrzuć

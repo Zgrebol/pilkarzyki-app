@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteLeague } from './league-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { TrashIcon } from '@heroicons/react/24/outline'
 
 export default function DeleteLeagueButton({
@@ -33,7 +33,7 @@ export default function DeleteLeagueButton({
   }
 
   return (
-    <Button onClick={handleDelete} disabled={isPending} variant="danger" size="sm">
+    <Button onClick={handleDelete} disabled={isPending} variant="destructive" size="sm">
       <TrashIcon className="h-3.5 w-3.5" />
       {isPending ? 'Usuwanie…' : 'Usuń'}
     </Button>

@@ -1,5 +1,5 @@
 import { createClient } from '../../../../../utils/supabase/server'
-import { Card } from '@/app/components/ui/Card'
+import { Card } from '@/app/components/ui/card'
 import { calculateScorersRanking } from '@/app/lib/scorers-ranking'
 
 type Props = {

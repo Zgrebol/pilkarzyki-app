@@ -1,6 +1,6 @@
 import { createClient } from '../../../../utils/supabase/server'
-import { Card } from '@/app/components/ui/Card'
-import { Badge } from '@/app/components/ui/Badge'
+import { Card } from '@/app/components/ui/card'
+import { Badge } from '@/app/components/ui/badge'
 import { calculateStandings } from '@/app/lib/league-standings'
 import { calcMatchScore } from '@/app/lib/match-score'
 import ManualPositionEditor from './manual-position-editor'

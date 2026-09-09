@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { setLineup } from './lineup-actions'
-import { Button } from '@/app/components/ui/Button'
+import { Button } from '@/app/components/ui/button'
 import { PencilIcon } from '@heroicons/react/24/outline'
 
 type RosterPlayer = {
@@ -238,7 +238,7 @@ export default function LineupEditor({
         <p className="text-xs text-orange-400">{clientValidationError}</p>
       )}
       <div className="flex gap-2 items-center">
-        <Button type="submit" disabled={isPending || !!clientValidationError} variant="primary" size="sm">
+        <Button type="submit" disabled={isPending || !!clientValidationError} variant="default" size="sm">
           {isPending ? 'Zapisuję…' : 'Zapisz trójkę'}
         </Button>
         <button
