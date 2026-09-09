@@ -43,19 +43,11 @@ function PlayerScoreDisplay({
   const finished = result?.match_finished ?? false
   const display = lastName(name)
 
-  if (goals > 0 && finished) {
+  if (goals > 0) {
     return (
       <span className="font-bold text-white">
         {display} {goals}
         {og > 0 && <span className="text-red-400 font-normal"> ({og} og)</span>}
-      </span>
-    )
-  }
-  if (goals > 0) {
-    return (
-      <span className="text-white">
-        {display} {goals}
-        {og > 0 && <span className="text-red-400"> ({og} og)</span>}
       </span>
     )
   }
@@ -287,16 +279,21 @@ export default async function TerminarzPage({ params }: Props) {
                                   const awayGoalEntries = awayLineupPlayers.map((p: any) => mdResultsLookup.get(p.id) ?? { goals: 0, own_goals: 0 })
                                   const { home: homeScore, away: awayScore } = calcMatchScore(homeGoalEntries, awayGoalEntries)
 
+                                  const homeAllFinished = homeLineupPlayers.length === 3 &&
+                                    homeLineupPlayers.every((p: any) => mdResultsLookup.get(p.id)?.match_finished === true)
+                                  const awayAllFinished = awayLineupPlayers.length === 3 &&
+                                    awayLineupPlayers.every((p: any) => mdResultsLookup.get(p.id)?.match_finished === true)
+
                                   return (
                                     <div key={pair.id}>
                                       {hasResults ? (
                                         <>
-                                          <p className="text-base font-bold text-white">
-                                            {homeInfo?.teamName ?? '?'}
+                                          <p className="text-base font-bold">
+                                            <span className={homeAllFinished ? 'text-gray-400' : 'text-green-400'}>{homeInfo?.teamName ?? '?'}</span>
                                             <span className="text-blue-400 mx-1.5">{homeScore}</span>
                                             <span className="text-gray-500 font-normal">–</span>
                                             <span className="text-blue-400 mx-1.5">{awayScore}</span>
-                                            {awayInfo?.teamName ?? '?'}
+                                            <span className={awayAllFinished ? 'text-gray-400' : 'text-green-400'}>{awayInfo?.teamName ?? '?'}</span>
                                           </p>
                                           {homeLineupPlayers.length === 3 && awayLineupPlayers.length === 3 && (
                                             <div className="text-sm text-gray-400 flex flex-wrap items-baseline gap-x-1 mt-0.5">
@@ -320,10 +317,10 @@ export default async function TerminarzPage({ params }: Props) {
                                         </>
                                       ) : (
                                         <>
-                                          <p className="text-base font-bold text-white">
-                                            {homeInfo?.teamName ?? '?'}
+                                          <p className="text-base font-bold">
+                                            <span className="text-green-400">{homeInfo?.teamName ?? '?'}</span>
                                             <span className="text-gray-500 font-normal mx-1.5">vs</span>
-                                            {awayInfo?.teamName ?? '?'}
+                                            <span className="text-green-400">{awayInfo?.teamName ?? '?'}</span>
                                           </p>
                                           <div className="text-sm text-gray-400 flex flex-wrap items-baseline gap-x-1 mt-0.5">
                                             <span>[</span>
