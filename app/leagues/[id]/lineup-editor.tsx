@@ -52,6 +52,11 @@ export default function LineupEditor({
     return `${p.full_name} (${p.league}) · ${p.position} · ${p.club}`
   }
 
+  function lastName(fullName: string): string {
+    const parts = fullName.trim().split(' ')
+    return parts[parts.length - 1]
+  }
+
   function validateLineup(ids: [string, string, string]): string | null {
     const selected = ids
       .map(id => playerMap.get(id))
@@ -120,7 +125,7 @@ export default function LineupEditor({
         const playerIds = (
           [currentLineup.player1_id, currentLineup.player2_id, currentLineup.player3_id] as (string | null)[]
         ).filter((id): id is string => id !== null)
-        const names = playerIds.map(id => playerMap.get(id)?.full_name ?? '?')
+        const names = playerIds.map(id => lastName(playerMap.get(id)?.full_name ?? '?'))
         const isIncomplete = !currentLineup.player2_id || !currentLineup.player3_id
         return (
           <span className="inline-flex items-baseline flex-wrap gap-x-1">
