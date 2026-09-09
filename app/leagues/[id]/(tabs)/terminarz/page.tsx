@@ -26,6 +26,11 @@ function formatDateRange(dateFrom: string | null, dateTo: string | null): string
   return `${fromStr} – ${toStr}`
 }
 
+function lastName(fullName: string): string {
+  const parts = fullName.trim().split(' ')
+  return parts[parts.length - 1]
+}
+
 function PlayerScoreDisplay({
   name,
   result,
@@ -36,27 +41,35 @@ function PlayerScoreDisplay({
   const goals = result?.goals ?? 0
   const og = result?.own_goals ?? 0
   const finished = result?.match_finished ?? false
+  const display = lastName(name)
 
-  if (goals > 0) {
+  if (goals > 0 && finished) {
     return (
       <span className="font-bold text-white">
-        {name}
-        <span className="text-blue-400"> {goals}</span>
+        {display} {goals}
         {og > 0 && <span className="text-red-400 font-normal"> ({og} og)</span>}
+      </span>
+    )
+  }
+  if (goals > 0) {
+    return (
+      <span className="text-white">
+        {display} {goals}
+        {og > 0 && <span className="text-red-400"> ({og} og)</span>}
       </span>
     )
   }
   if (finished) {
     return (
       <span className="text-gray-500 italic">
-        {name}
+        {display}
         {og > 0 && <span className="text-red-400 not-italic"> ({og} og)</span>}
       </span>
     )
   }
   return (
     <span className="text-gray-500">
-      {name}
+      {display}
       {og > 0 && <span className="text-red-400"> ({og} og)</span>}
     </span>
   )
