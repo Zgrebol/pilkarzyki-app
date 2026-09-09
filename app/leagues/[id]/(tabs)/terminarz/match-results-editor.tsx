@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { setMatchResults } from '../../results-actions'
+import { calcMatchScore } from '@/app/lib/match-score'
 import { Button } from '@/app/components/ui/Button'
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
@@ -32,14 +33,6 @@ type Props = {
 }
 
 type GoalEntry = { goals: number; own_goals: number }
-
-function calcScore(home: GoalEntry[], away: GoalEntry[]) {
-  const sum = (arr: GoalEntry[], f: keyof GoalEntry) => arr.reduce((s, p) => s + p[f], 0)
-  return {
-    home: sum(home, 'goals') + sum(away, 'own_goals'),
-    away: sum(away, 'goals') + sum(home, 'own_goals'),
-  }
-}
 
 export default function MatchResultsEditor({ matchdayId, pairs, existingResults, canEdit }: Props) {
   const validPairs = pairs.filter(p => p.homePlayers.length === 3 && p.awayPlayers.length === 3)
@@ -124,7 +117,7 @@ export default function MatchResultsEditor({ matchdayId, pairs, existingResults,
         {validPairs.map(pair => {
           const homeEntries = pair.homePlayers.map(p => getEntry(p.id))
           const awayEntries = pair.awayPlayers.map(p => getEntry(p.id))
-          const score = calcScore(homeEntries, awayEntries)
+          const score = calcMatchScore(homeEntries, awayEntries)
           return (
             <div key={pair.pairId} className="border border-gray-700/50 rounded p-3 space-y-2">
               <p className="text-sm font-medium text-white">

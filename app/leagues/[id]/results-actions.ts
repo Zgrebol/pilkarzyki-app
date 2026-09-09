@@ -48,12 +48,13 @@ export async function setMatchResults(
   const supabasePre = await createClient()
   const { data: matchday } = await supabasePre
     .from('matchdays')
-    .select('id, seasons(league_id)')
+    .select('id, season_id, seasons(league_id)')
     .eq('id', matchdayId)
     .maybeSingle()
 
   if (!matchday) return { error: 'Kolejka nie istnieje' }
   const leagueId = (matchday as any).seasons?.league_id as string | undefined
+  const seasonId = (matchday as any).season_id as string | undefined
   if (!leagueId) return { error: 'Nie można ustalić ligi dla tej kolejki' }
 
   const { error: authError, supabase } = await requireLeagueModOrAdmin(leagueId)
@@ -81,6 +82,14 @@ export async function setMatchResults(
     .upsert(rows, { onConflict: 'matchday_id,roster_player_id' })
 
   if (upsertError) return { error: upsertError.message }
+
+  if (seasonId) {
+    await supabase
+      .from('season_participants')
+      .update({ manual_position_override: null })
+      .eq('season_id', seasonId)
+      .not('manual_position_override', 'is', null)
+  }
 
   revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true, saved: results.length }

@@ -1,6 +1,7 @@
 import { createClient } from '../../../../../utils/supabase/server'
 import MemberRoleControls from '../../member-role-controls'
 import RosterManagement from '../../roster-management'
+import DraftPositionEditor from '../../draft-position-editor'
 import { Badge } from '@/app/components/ui/Badge'
 import { Card } from '@/app/components/ui/Card'
 import {
@@ -74,7 +75,7 @@ export default async function CzlonkowiePage({ params }: Props) {
   if (currentSeason?.status === 'locked') {
     const { data: participantsData } = await supabase
       .from('season_participants')
-      .select('id, teams(name, owner_id, profiles(display_name))')
+      .select('id, draft_position, teams(name, owner_id, profiles(display_name))')
       .eq('season_id', currentSeason.id)
 
     seasonParticipants = participantsData ?? []
@@ -182,11 +183,17 @@ export default async function CzlonkowiePage({ params }: Props) {
                       </div>
                     )}
                     {canModerate && (
-                      <RosterManagement
-                        leagueId={id}
-                        seasonParticipantId={p.id}
-                        players={roster}
-                      />
+                      <>
+                        <DraftPositionEditor
+                          participantId={p.id}
+                          currentDraftPosition={p.draft_position ?? null}
+                        />
+                        <RosterManagement
+                          leagueId={id}
+                          seasonParticipantId={p.id}
+                          players={roster}
+                        />
+                      </>
                     )}
                   </div>
                 )
