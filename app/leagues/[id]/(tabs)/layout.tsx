@@ -1,14 +1,13 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '../../../../utils/supabase/server'
-import TabsNav from './tabs-nav'
+import SidebarNav from './sidebar-nav'
 import DeleteLeagueButton from '../delete-league-button'
 import RestoreLeagueButton from '../restore-league-button'
 import CloseRegistrationButton from '../close-registration-button'
 import ReopenRegistrationButton from '../reopen-registration-button'
 import LeaveLeagueButton from '../leave-league-button'
 import CreateTeamButton from '../create-team-button'
-import FillIronLineupsButton from '../fill-iron-lineups-button'
 import PendingMembersPanel from '../pending-members-panel'
 import EmergencyReopenButton from '../emergency-reopen-button'
 import { Badge } from '@/app/components/ui/Badge'
@@ -170,7 +169,7 @@ export default async function LeagueLayout({ params, children }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
 
         {isDeleted && (
           <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
@@ -366,16 +365,14 @@ export default async function LeagueLayout({ params, children }: Props) {
           </section>
         )}
 
-        {/* Przycisk uzupełnienia żelaznych trójek */}
-        {canModerate && currentSeason?.status === 'locked' && (
-          <div className="flex justify-end mb-4">
-            <FillIronLineupsButton seasonId={currentSeason.id} />
-          </div>
-        )}
-
-        <TabsNav leagueId={id} />
-
-        {children}
+        <div className="flex flex-col md:flex-row gap-6 mt-6">
+          <aside className="md:w-52 shrink-0">
+            <SidebarNav leagueId={id} canModerate={canModerate} />
+          </aside>
+          <main className="min-w-0 flex-1">
+            {children}
+          </main>
+        </div>
 
       </div>
     </div>

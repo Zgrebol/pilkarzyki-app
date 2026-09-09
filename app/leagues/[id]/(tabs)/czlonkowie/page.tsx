@@ -1,7 +1,5 @@
 import { createClient } from '../../../../../utils/supabase/server'
 import MemberRoleControls from '../../member-role-controls'
-import RosterManagement from '../../roster-management'
-import DraftPositionEditor from '../../draft-position-editor'
 import { Badge } from '@/app/components/ui/Badge'
 import { Card } from '@/app/components/ui/Card'
 import {
@@ -37,10 +35,6 @@ export default async function CzlonkowiePage({ params }: Props) {
     myMembership = memberRes.data
   }
 
-  const canModerate = isSuperAdmin ||
-    (myMembership?.status === 'active' &&
-      (myMembership.role === 'admin' || myMembership.role === 'mod'))
-
   const iAmLeagueAdmin = myMembership?.status === 'active' && myMembership.role === 'admin'
   const canManageRoles = iAmLeagueAdmin || isSuperAdmin
 
@@ -61,39 +55,6 @@ export default async function CzlonkowiePage({ params }: Props) {
   )
 
   const memberCount = members?.length ?? 0
-
-  const { data: currentSeason } = await supabase
-    .from('seasons')
-    .select('id, status')
-    .eq('league_id', id)
-    .in('status', ['registration', 'locked'])
-    .maybeSingle()
-
-  let seasonParticipants: any[] = []
-  let rosterByParticipant = new Map<string, any[]>()
-
-  if (currentSeason?.status === 'locked') {
-    const { data: participantsData } = await supabase
-      .from('season_participants')
-      .select('id, draft_position, teams(name, owner_id, profiles(display_name))')
-      .eq('season_id', currentSeason.id)
-
-    seasonParticipants = participantsData ?? []
-
-    const participantIds = seasonParticipants.map((p: any) => p.id)
-    if (participantIds.length > 0) {
-      const { data: allPlayers } = await supabase
-        .from('roster_players')
-        .select('id, season_participant_id, full_name, club, position, league')
-        .in('season_participant_id', participantIds)
-
-      for (const player of (allPlayers ?? []) as any[]) {
-        const list = rosterByParticipant.get(player.season_participant_id) ?? []
-        list.push(player)
-        rosterByParticipant.set(player.season_participant_id, list)
-      }
-    }
-  }
 
   return (
     <>
@@ -140,68 +101,6 @@ export default async function CzlonkowiePage({ params }: Props) {
         )}
       </section>
 
-      {currentSeason?.status === 'locked' && (
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Uczestnicy sezonu</h2>
-          {seasonParticipants.length === 0 ? (
-            <Card className="p-6 text-gray-400 text-sm">
-              Brak drużyn zapisanych do sezonu.
-            </Card>
-          ) : (
-            <Card className="divide-y divide-gray-700">
-              {seasonParticipants.map((p: any) => {
-                const roster = rosterByParticipant.get(p.id) ?? []
-                return (
-                  <div key={p.id} className="px-5 py-4">
-                    <div className="flex justify-between items-start flex-wrap gap-2 mb-2">
-                      <div>
-                        <p className="font-medium">{p.teams?.name ?? '(brak nazwy)'}</p>
-                        <p className="text-xs text-gray-400">
-                          {p.teams?.profiles?.display_name ?? '(brak właściciela)'}
-                        </p>
-                      </div>
-                      <Badge variant={roster.length >= 9 ? 'pairs-ok' : 'neutral'}>
-                        {roster.length}/9 zawodników
-                      </Badge>
-                    </div>
-                    {roster.length === 0 ? (
-                      <p className="text-xs text-gray-500 italic mb-2">Brak zawodników w składzie</p>
-                    ) : (
-                      <div className="text-xs text-gray-300 mb-2 space-y-0.5">
-                        {roster.filter((pl: any) => pl.position === 'napastnik').length > 0 && (
-                          <p>
-                            <span className="font-bold text-gray-200">Napastnicy:</span>{' '}
-                            {roster.filter((pl: any) => pl.position === 'napastnik').map((pl: any) => `${pl.full_name} (${pl.club})`).join(', ')}
-                          </p>
-                        )}
-                        {roster.filter((pl: any) => pl.position === 'pomocnik').length > 0 && (
-                          <p>
-                            <span className="font-bold text-gray-200">Pomocnicy:</span>{' '}
-                            {roster.filter((pl: any) => pl.position === 'pomocnik').map((pl: any) => `${pl.full_name} (${pl.club})`).join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {canModerate && (
-                      <>
-                        <DraftPositionEditor
-                          participantId={p.id}
-                          currentDraftPosition={p.draft_position ?? null}
-                        />
-                        <RosterManagement
-                          leagueId={id}
-                          seasonParticipantId={p.id}
-                          players={roster}
-                        />
-                      </>
-                    )}
-                  </div>
-                )
-              })}
-            </Card>
-          )}
-        </section>
-      )}
     </>
   )
 }
