@@ -62,12 +62,14 @@ export async function setManualPosition(
   const leagueId = await getParticipantLeague(supabase, participantId)
   if (!leagueId) return { error: 'Nie można ustalić ligi dla tego uczestnika' }
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from('season_participants')
     .update({ manual_position_override: position })
     .eq('id', participantId)
+    .select('id')
 
   if (updateError) return { error: updateError.message }
+  if (!updated || updated.length === 0) return { error: 'Zapis zablokowany — sprawdź polityki RLS dla season_participants' }
 
   revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
