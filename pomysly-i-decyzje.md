@@ -1282,3 +1282,57 @@ Decyzje produktowe ustalone w sesji 7, do implementacji w Fazie 2:
   - "mz" skrót od "mecz zakończony" — gracz zakończył swój mecz danej kolejki
   - Kursywa = zakończony bez gola (informacja że nie ma co czekać na gola)
   - mz tylko do zaznaczenia (checkbox, nie liczba) — zero/jedynkowe pole
+
+- Sesja tylko nazwiska (data: 09.09.2026)
+
+  ### Co zrobione
+  - Terminarz: PlayerScoreDisplay wyświetla tylko nazwisko (ostatni człon full_name, 
+    helper lastName()). Dotyczy sekcji z wynikami (bramki, kursywa przy mz).
+  - LineupEditor tryb compact (przed wpisaniem wyników): zamiast pełnego imienia 
+    i nazwiska wyświetlane jest tylko nazwisko (ta sama logika lastName()).
+    Pole edycji wyboru zawodnika (dropdown) zostaje bez zmian — tam pomocnicze info 
+    "(liga) — pozycja" jest potrzebne.
+
+  ### Decyzja
+  - lastName() = ostatni człon po split(' ') — obsługuje "Jan Kowalski" → "Kowalski" 
+    i jednoczłonowe (np. "Mbappe" → "Mbappe"). Nie ruszamy bazy — display transform w kodzie.
+
+- Sesja shadcn/ui (data: 09.09.2026)
+
+  ### Co zrobione
+  - Zainstalowano shadcn/ui (v4.21.0) kompatybilne z Tailwind v4 + React 19 + Next.js 16
+  - Komponenty Button/Card/Badge zastąpione przez shadcn (cva, Radix UI, dark theme CSS vars)
+  - Badge zachowuje domeno-specyficzne warianty: admin/mod/player/public/private/locked/
+    pairs-ok/neutral/warning/danger — dołożone do badgeVariants obok shadcn default/secondary/
+    destructive/outline
+  - globals.css: dodane CSS variables shadcn (--primary, --card, --destructive, --ring itp.)
+    skonfigurowane pod dark theme jako domyślny (aplikacja zawsze ciemna)
+  - components.json: konfiguracja shadcn dla naszej struktury (app/components/ui, @/lib/utils)
+  - class-variance-authority zainstalowane
+  - 33 pliki: warianty Button przemianowane (primary→default, danger→destructive, size=md→default)
+  - Pliki UI przemianowane na lowercase w git (Badge→badge, Button→button, Card→card)
+    i importy na lowercase — wymagane przez Turbopack (case-sensitive nawet na Windows)
+
+  ### Decyzje
+  - Dark theme jako jedyne (nie light/dark toggle) — CSS vars ustawione na ciemne wartości w :root
+  - Badge: obie warstwy wariantów (shadcn standard + domeno-specyficzne) w jednym cva
+  - Stare własne komponenty Button/Card całkowicie zastąpione — API shadcn jest nadzbiorem
+  - Nowe komponenty shadcn (Table, Dialog, Select itp.) można teraz dodawać przez npx shadcn@latest add
+
+  ### Lekcja techniczna
+  - Turbopack robi case-sensitive module resolution nawet na case-insensitive (Windows) filesystem
+  - Na Vercelu (Linux) też case-sensitive — pliki i importy MUSZĄ mieć tę samą wielkość liter
+  - Rename case-only w git wymaga dwuetapowego mv przez plik tymczasowy
+  - PowerShell 5.1: Get-Content z [-Raw] NIE działa dla ścieżek z [id] (interprets as wildcard)
+    → używać [System.IO.File]::ReadAllText z UTF8Encoding dla bezpiecznego odczytu
+
+- Sesja bugfix manual position (data: 10.09.2026)
+
+  ### Co zrobione
+  - Naprawiono: ręczna zmiana pozycji w tabeli (super admin) nie odświeżała widoku
+  - Przyczyna: revalidatePath('/leagues/...', 'layout') w Server Action odświeżał dane
+    po stronie serwera, ale ManualPositionEditor (Client Component) nie wymuszał
+    re-renderu — tabela zostawała bez zmian do twardego odświeżenia strony
+  - Fix: dodano router.refresh() (useRouter z next/navigation) po sukcesie w handleSave
+    i handleClear w manual-position-editor.tsx
+  - Build przeszedł (npm run build OK)
