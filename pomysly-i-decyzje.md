@@ -1333,6 +1333,13 @@ Decyzje produktowe ustalone w sesji 7, do implementacji w Fazie 2:
   - Przyczyna: revalidatePath('/leagues/...', 'layout') w Server Action odświeżał dane
     po stronie serwera, ale ManualPositionEditor (Client Component) nie wymuszał
     re-renderu — tabela zostawała bez zmian do twardego odświeżenia strony
-  - Fix: dodano router.refresh() (useRouter z next/navigation) po sukcesie w handleSave
+  - Fix 1: dodano router.refresh() (useRouter z next/navigation) po sukcesie w handleSave
     i handleClear w manual-position-editor.tsx
+  - Fix 2: RLS na season_participants nie miała polityki UPDATE dla super admina — UPDATE
+    wracał bez błędu ale nie zmieniał żadnych wierszy, akcja zwracała success fałszywie
+  - Naprawione przez dodanie polityki SQL w Supabase:
+    CREATE POLICY "season_participants update super admin" ON season_participants FOR UPDATE
+    USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_super_admin = true))
+  - Wykrycie cichej blokady: dodano .select('id') po .update() — jeśli brak zwróconych
+    wierszy to błąd, nie sukces
   - Build przeszedł (npm run build OK)

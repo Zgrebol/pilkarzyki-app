@@ -69,7 +69,7 @@ export async function setManualPosition(
     .select('id')
 
   if (updateError) return { error: updateError.message }
-  if (!updated || updated.length === 0) return { error: 'Zapis zablokowany — sprawdź polityki RLS dla season_participants' }
+  if (!updated || updated.length === 0) return { error: 'Nie udało się zapisać — uczestnik nie istnieje' }
 
   revalidatePath(`/leagues/${leagueId}`, 'layout')
   return { success: true }
