@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { setManualPosition } from '../table-actions'
 import { Button } from '@/app/components/ui/button'
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -12,6 +13,7 @@ type Props = {
 }
 
 export default function ManualPositionEditor({ participantId, currentOverride, totalParticipants }: Props) {
+  const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +33,7 @@ export default function ManualPositionEditor({ participantId, currentOverride, t
       } else {
         setEditing(false)
         setValue('')
+        router.refresh()
       }
     })
   }
@@ -44,6 +47,7 @@ export default function ManualPositionEditor({ participantId, currentOverride, t
       } else {
         setEditing(false)
         setValue('')
+        router.refresh()
       }
     })
   }
